@@ -1,3 +1,3 @@
 [submodule "gin-rummy-eaai"]
 	path = gin-rummy-eaai
-	url = git@github.com:tneller/gin-rummy-eaai.git
+	url = https://github.com/tneller/gin-rummy-eaai.git

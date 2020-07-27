@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
 
+import siftagent.SiftAgent;
 
 /**
  * A class for modeling a game of Gin Rummy
@@ -307,13 +308,13 @@ public class GinRummyGame {
 	public static void main(String[] args) {
 		// Single verbose demonstration game
 		setPlayVerbose(true);
-		new GinRummyGame(new SimpleGinRummyPlayer(), new SimpleGinRummyPlayer()).play();
+		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);
 		int numGames = 1000;
 		int numP1Wins = 0;
-		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SimpleGinRummyPlayer());
+		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
 		long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			numP1Wins += game.play();

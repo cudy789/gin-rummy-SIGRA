@@ -179,7 +179,7 @@ public class SiftAgent implements GinRummyPlayer {
     public ArrayList<ArrayList<Card>> getFinalMelds() {
         if (opponent_melds != null) {
             ArrayList<Long> meld_ints = best_melds(my_hand);
-            if (meld_ints == null) { return null ;}
+            if (meld_ints == null) { return new ArrayList<ArrayList<Card>>(); } // if we have no melds, return an empty list
             ArrayList<ArrayList<Card>> melds = new ArrayList<ArrayList<Card>>(meld_ints.size());
             for (Long meld : meld_ints) {
                 melds.add(GinRummyUtil.bitstringToCards(meld));

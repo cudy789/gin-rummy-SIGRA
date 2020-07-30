@@ -7,6 +7,9 @@ import ginrummy.GinRummyPlayer;
 import ginrummy.GinRummyUtil;
 import java.lang.Long;
 import java.lang.Integer;
+import java.util.Arrays;
+import java.util.Stack;
+import java.util.ArrayList;
 
 public class SiftAgent implements GinRummyPlayer {
     static final int HAND_SIZE = 10;
@@ -33,17 +36,17 @@ public class SiftAgent implements GinRummyPlayer {
         }
     }
 
-    static int bitstring_id(long card) {
-        return Long.numberOfTrailingZeros(card);
-    }
+//    static int bitstring_id(long card) {
+//        return Long.numberOfTrailingZeros(card);
+//    }
     
-    static Card bitstring_card(long card) {
-        return Card.getCard(bitstring_id(card));
-    }
+//    static Card bitstring_card(long card) {
+//        return Card.getCard(bitstring_id(card));
+//    }
 
-    static long card_bitstring(Card card) {
-        return 1 << card.getId();
-    }
+//    static long card_bitstring(Card card) {
+//        return 1 << card.getId();
+//    }
 
     void make_unavail_in_straight(Card card) {
         int suit = card.getSuit();
@@ -60,67 +63,74 @@ public class SiftAgent implements GinRummyPlayer {
         }
     }
 
-    void make_unavail(long card) {
-        Card boxed = bitstring_card(card);
-        make_unavail_in_straight(boxed);
-    }
+//    void make_unavail(long card) {
+//        Card boxed = bitstring_card(card);
+//        make_unavail_in_straight(boxed);
+//    }
 
-    static final long UNKNOWN_CARD = -1;
+//    static final long UNKNOWN_CARD = -1;
 
     int my_score;
     int opponent_score;
 
     boolean i_play_first;
     int my_number;
-    long my_hand;
-    long opponent_hand_known;
-    long opponent_passed;
-    long discard;
-    long top_discard = UNKNOWN_CARD;
+//    long my_hand;
+//    long opponent_hand_known;
+//    long opponent_passed;
+//    long discard;
+//    long top_discard = UNKNOWN_CARD;
 
-    static final long FULL_DECK = (1 << Card.NUM_CARDS) - 1;
+    // cards in our hand
+    ArrayList<Card> my_hand;
+    // known cards in opponent's hand
+    ArrayList<Card> opponent_hand_known;
+    // cards that we discarded and our opponent didn't pick up
+    ArrayList<Card> opponent_passed;
+    // cards in the discard pile (including the top card after any player discards)
+    Stack<Card> discard_pile;
+
+//    static final long FULL_DECK = (1 << Card.NUM_CARDS) - 1;
     
-    ArrayList<Long> opponent_melds;
+//    ArrayList<Long> opponent_melds;
+
+    // list of list of opponent's melds, used when knocking
+    ArrayList<ArrayList<Card>> opponent_melds;
 
     void reset_for_new_hand() {
         init_straight_avail();
-        my_hand = 0;
-        opponent_hand_known = 0;
-        opponent_passed = 0;
+        my_hand = new ArrayList<Card>();
+        opponent_hand_known = new ArrayList<Card>();
+        opponent_passed = new ArrayList<Card>();
         opponent_melds = null;
-        top_discard = UNKNOWN_CARD;
-        discard = 0;
+        discard_pile = new Stack<Card>();
     }
 
-    long remaining_cards() {
-        return FULL_DECK ^ (my_hand | opponent_hand_known | discard | top_discard);
+    ArrayList<Card> remaining_cards() {
+        ArrayList<Card> rem_cards = new ArrayList<Card>();
+        for (Card c : Card.allCards){
+            if (!my_hand.contains(c) && !opponent_hand_known.contains(c) && !discard_pile.contains(c)){
+                rem_cards.add(c);
+            }
+        }
+        return rem_cards;
     }
 
     double probability_to_draw(long card) {
-        long ct = Long.bitCount(remaining_cards());
-        return 1.0 / (double)ct;
+        return 1.0 / (double)remaining_cards().size();
     }
 
-    static ArrayList<Long> best_melds(long hand) {
+    static ArrayList<ArrayList<Card>> best_melds(ArrayList<Card> hand) {
         ArrayList<ArrayList<Card>> best_set = null;
         int best_deadwood = Integer.MAX_VALUE;
-        ArrayList<Card> hand_arr = GinRummyUtil.bitstringToCards(hand);
-        for (ArrayList<ArrayList<Card>> melds : GinRummyUtil.cardsToAllMaximalMeldSets(hand_arr)) {
-            int new_deadwood = GinRummyUtil.getDeadwoodPoints(melds, hand_arr);
+        for (ArrayList<ArrayList<Card>> melds : GinRummyUtil.cardsToAllMaximalMeldSets(hand)) {
+            int new_deadwood = GinRummyUtil.getDeadwoodPoints(melds, hand);
             if (new_deadwood < best_deadwood) {
                 best_deadwood = new_deadwood;
                 best_set = melds;
             }
         }
-        if (best_set != null) {
-            ArrayList<Long> melds = new ArrayList<Long>(best_set.size());
-            for (ArrayList<Card> meld : best_set) {
-                melds.add(Long.valueOf(GinRummyUtil.cardsToBitstring(meld)));
-            }
-            return melds;
-        } else {
-            return null;
-        }
+        return best_set;
     }
 
     // despite being called `startGame`, this function is called at the start of each new hand.
@@ -129,72 +139,55 @@ public class SiftAgent implements GinRummyPlayer {
         reset_for_new_hand();
         my_number = playerNum;
         i_play_first = my_number == startingPlayerNum;
-        my_hand = 0;
-        for (Card card : cards) {
-            my_hand |= card_bitstring(card);
-        }
+        my_hand = new ArrayList<Card>(Arrays.asList(cards));
     }
     @Override
     public boolean willDrawFaceUpCard(Card card) {
-        top_discard = card_bitstring(card);
-        // TODO: uhhhh...
+        discard_pile.push(card);
+        // TODO: uhhhh... never draw the faceup card
         return false;
     }
     @Override
     public void reportDraw(int playerNum, Card drawnCard) {
+        // we pushed the faceup card onto the discard_pile in wilLDrawFaceUpCard
+        if(discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())){ // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate hand later
+            discard_pile.pop();
+        } else if (playerNum != my_number){ // it's not our turn and our opponent passed on the top card
+            opponent_passed.add(drawnCard);
+        }
         if (playerNum == my_number) {
-            long drawn_card = card_bitstring(drawnCard);
-            if (drawn_card == top_discard) {
-                top_discard = UNKNOWN_CARD;
-            }
-            my_hand |= drawn_card;
-        } else if (drawnCard != null) {
-            long drawn_card = card_bitstring(drawnCard);
-            if (drawn_card == top_discard) {
-                top_discard = UNKNOWN_CARD;
-                opponent_hand_known |= drawn_card;
-            }
+            my_hand.add(drawnCard);
         } else {
-            assert top_discard != UNKNOWN_CARD;
-            opponent_passed |= top_discard;
+            opponent_hand_known.add(drawnCard);
         }
     }
     @Override
     public Card getDiscard() {
-        // TODO: uhhhhh...
-        long lowest_card = Long.lowestOneBit(my_hand);
-        return bitstring_card(lowest_card);
+        // TODO: uhhhhh... just give 'em a card from our hand
+        return my_hand.remove(0);
     }
     @Override
     public void reportDiscard(int playerNum, Card discardedCard) {
-        long card = card_bitstring(discardedCard);
-        if (playerNum == my_number) {
-            my_hand ^= card;
-        } else {
-            opponent_hand_known ^= card;
+        discard_pile.push(discardedCard);
+        if (playerNum != my_number){
+            opponent_hand_known.remove(discardedCard); // try to remove card from opponent's known hand
         }
-        discard ^= card;
     }
     @Override
     public ArrayList<ArrayList<Card>> getFinalMelds() {
-        if (opponent_melds != null) {
-            ArrayList<Long> meld_ints = best_melds(my_hand);
-            if (meld_ints == null) { return new ArrayList<ArrayList<Card>>(); } // if we have no melds, return an empty list
-            ArrayList<ArrayList<Card>> melds = new ArrayList<ArrayList<Card>>(meld_ints.size());
-            for (Long meld : meld_ints) {
-                melds.add(GinRummyUtil.bitstringToCards(meld));
+        if (opponent_melds != null) { // we never initiate a knock, so we only report melds if the other player knocks
+            ArrayList<ArrayList<ArrayList<Card>>> best_melds = GinRummyUtil.cardsToBestMeldSets(my_hand);
+            if (best_melds.size() == 0){
+                return new ArrayList<ArrayList<Card>>();
             }
-            return melds;
+            return best_melds.get(0); // the simpleginrummyplayer grabs a random set of melds from here, does it matter which one we choose???
         }
         return null;
     }
     @Override
     public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {
         if (playerNum != my_number) {
-            opponent_melds = new ArrayList<Long>(melds.size());
-            for (ArrayList<Card> meld : melds) {
-                opponent_melds.add(Long.valueOf(GinRummyUtil.cardsToBitstring(meld)));
-            }
+            opponent_melds = melds;
         }
     }
     @Override

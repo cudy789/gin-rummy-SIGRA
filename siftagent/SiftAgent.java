@@ -1,5 +1,6 @@
 package siftagent;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import ginrummy.Card;
@@ -176,11 +177,11 @@ public class SiftAgent implements GinRummyPlayer {
     @Override
     public ArrayList<ArrayList<Card>> getFinalMelds() {
         if (opponent_melds != null) { // we never initiate a knock, so we only report melds if the other player knocks
-            ArrayList<ArrayList<ArrayList<Card>>> best_melds = GinRummyUtil.cardsToBestMeldSets(my_hand);
-            if (best_melds.size() == 0){
+            ArrayList<ArrayList<Card>> best_melds = best_melds(my_hand);
+            if (best_melds == null){
                 return new ArrayList<ArrayList<Card>>();
             }
-            return best_melds.get(0); // the simpleginrummyplayer grabs a random set of melds from here, does it matter which one we choose???
+            return best_melds; // the simpleginrummyplayer grabs a random set of melds from here, does it matter which one we choose???
         }
         return null;
     }

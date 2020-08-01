@@ -310,14 +310,14 @@ public class GinRummyGame {
 		// Single verbose demonstration game
 		setPlayVerbose(true);
 //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-		new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SimpleGinRummyPlayer()).play();
+		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);
 		int numGames = 1000;
 		int numP1Wins = 0;
 //		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
-		GinRummyGame game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SimpleGinRummyPlayer());
+		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
 		long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			numP1Wins += game.play();

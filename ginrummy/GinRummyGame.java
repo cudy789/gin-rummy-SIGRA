@@ -123,8 +123,14 @@ public class GinRummyGame {
 					Card drawCard = drawFaceUp ? discards.pop() : deck.pop();
 					for (int i = 0; i < 2; i++) 
 						players[i].reportDraw(currentPlayer, (i == currentPlayer || drawFaceUp) ? drawCard : null);
-					if (playVerbose)
-						System.out.printf("Player %d draws %s.\n", currentPlayer, drawCard);
+					if (playVerbose) {
+                                            System.out.printf("Player %d draws %s", currentPlayer, drawCard);
+                                            if (drawFaceUp) {
+                                                System.out.println(" from the discard.");
+                                            } else {
+                                                System.out.println(" from the deck.");
+                                            }
+                                        }
 					hands.get(currentPlayer).add(drawCard);
 
 					// DISCARD

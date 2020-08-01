@@ -272,7 +272,10 @@ public class SiftAgent implements GinRummyPlayer {
         reset_for_new_hand();
         my_number = playerNum;
         i_play_first = my_number == startingPlayerNum;
-        my_hand = new ArrayList<Card>(Arrays.asList(cards));
+        for (Card card : cards) {
+            my_hand.add(card);
+            make_nearer(card);
+        }
     }
     // Confusingly, this method is also used to report the initial face-up card at the start of a game.
     @Override
@@ -351,15 +354,22 @@ public class SiftAgent implements GinRummyPlayer {
     }
     @Override
     public ArrayList<ArrayList<Card>> getFinalMelds() {
-         // we never initiate a knock, so we only report melds if the other player knocks
+        ArrayList<ArrayList<Card>> best_melds = best_melds(my_hand);
+        if (best_melds == null) {
+            best_melds = new ArrayList<ArrayList<Card>>();
+        }
         if (opponent_melds != null) {
-            ArrayList<ArrayList<Card>> best_melds = best_melds(my_hand);
+            // opponent has knocked, so we need to report our melds
             if (best_melds == null){
                 return new ArrayList<ArrayList<Card>>();
             }
             return best_melds;
+        } else if (GinRummyUtil.getDeadwoodPoints(best_melds, my_hand) == 0) {
+            // we have gin! go out
+            return best_melds;
+        } else {
+            return null;
         }
-        return null;
     }
     @Override
     public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {

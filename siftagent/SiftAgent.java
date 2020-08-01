@@ -152,6 +152,13 @@ public class SiftAgent implements GinRummyPlayer {
         return Integer.min(distance_from_nearest_match(card), distance_from_nearest_straight(card));
     }
 
+    // True if `card` is part of a meld in our hand.
+    //
+    // This should be called on cards which are already in our hand.
+    boolean in_meld(Card card) {
+        return distance_from_nearest_meld(card) == 0;
+    }
+
     // True if `card` completes a meld in our hand.
     //
     // This should be called on cards we intend to draw which are not yet in our hand.
@@ -308,10 +315,26 @@ public class SiftAgent implements GinRummyPlayer {
             opponent_passed.add(discard_pile.peek());
         }
     }
+
+    // Discard the card from our hand which is not part of a meld and worth the most deadwood points.
+    //
+    // TODO: consider distance from possible melds?
     @Override
     public Card getDiscard() {
-        // TODO: uhhhhh... just give 'em a card from our hand
-        return my_hand.remove(0);
+        Card to_discard = null;
+        int max_deadwood = Integer.MIN_VALUE;
+        for (Card card : my_hand) {
+            if (in_meld(card)) {
+                continue;
+            }
+            int this_deadwood = GinRummyUtil.getDeadwoodPoints(card);
+            if (this_deadwood > max_deadwood) {
+                to_discard = card;
+                max_deadwood = this_deadwood;
+            }
+        }
+        my_hand.remove(to_discard);
+        return to_discard;
     }
     @Override
     public void reportDiscard(int playerNum, Card discardedCard) {

@@ -314,23 +314,24 @@ public class GinRummyGame {
 	 */
 	public static void main(String[] args) {
 		// Single verbose demonstration game
+		RANDOM.setSeed(0);
 		setPlayVerbose(true);
 //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
 		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
 
 		// Multiple non-verbose games 
-		setPlayVerbose(false);
-		int numGames = 1000;
-		int numP1Wins = 0;
+//		setPlayVerbose(false);
+//		int numGames = 1000;
+//		int numP1Wins = 0;
+////		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
 //		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
-		GinRummyGame game = new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer());
-		long startMs = System.currentTimeMillis();
-		for (int i = 0; i < numGames; i++) {
-			numP1Wins += game.play();
-		}
-		long totalMs = System.currentTimeMillis() - startMs;
-		System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
-		System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
+//		long startMs = System.currentTimeMillis();
+//		for (int i = 0; i < numGames; i++) {
+//			numP1Wins += game.play();
+//		}
+//		long totalMs = System.currentTimeMillis() - startMs;
+//		System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
+//		System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 	}
 	
 }

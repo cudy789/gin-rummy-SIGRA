@@ -11,6 +11,9 @@ import java.lang.Integer;
 import java.util.Arrays;
 import java.util.Stack;
 import java.util.ArrayList;
+import siftagent.Heuristic;
+import java.io.*;
+
 
 public class SiftAgent implements GinRummyPlayer {
     static final int HAND_SIZE = 10;
@@ -142,7 +145,7 @@ public class SiftAgent implements GinRummyPlayer {
     //
     // This means slightly different things depending on whether `card` is already in our hand or not.
     //
-    // If `card` is already in our hand, then zero means it is part of a complete mmeld; one means that we
+    // If `card` is already in our hand, then zero means it is part of a complete meld; one means that we
     // need to draw one card to make the nearest meld, and so forth.
     //
     // If `card` is not in our hand, then zero means that we already have a complete meld in our hand to which
@@ -213,20 +216,24 @@ public class SiftAgent implements GinRummyPlayer {
         make_straights_nearer(card);
     }
 
-    boolean i_play_first;
-    int my_number;
+    public boolean i_play_first;
+    public int my_number;
+    public Card picked_up_discard = null;
 
     // cards in our hand
-    ArrayList<Card> my_hand = new ArrayList<Card>(HAND_SIZE);
+    public ArrayList<Card> my_hand = new ArrayList<Card>(HAND_SIZE);
     // known cards in opponent's hand
-    ArrayList<Card> opponent_hand_known = new ArrayList<Card>(HAND_SIZE);
+    public ArrayList<Card> opponent_hand_known = new ArrayList<Card>(HAND_SIZE);
     // cards that we discarded and our opponent didn't pick up
-    ArrayList<Card> opponent_passed = new ArrayList<Card>(Card.NUM_CARDS);
+    public ArrayList<Card> opponent_passed = new ArrayList<Card>(Card.NUM_CARDS);
     // cards in the discard pile (including the top card after any player discards)
-    Stack<Card> discard_pile = new Stack<Card>();
+    public Stack<Card> discard_pile = new Stack<Card>();
 
     // list of list of opponent's melds, used when knocking
-    ArrayList<ArrayList<Card>> opponent_melds;
+    public ArrayList<ArrayList<Card>> opponent_melds;
+
+    private final Heuristic my_heuristic = new Heuristic(this);
+
 
     void reset_for_new_hand() {
         init_straight_distances();
@@ -242,7 +249,7 @@ public class SiftAgent implements GinRummyPlayer {
         return Card.NUM_CARDS - my_hand.size() - opponent_hand_known.size() - discard_pile.size();
     }
 
-    double probability_to_draw(Card card) {
+    public double probability_to_draw(Card card) {
         if (discard_pile.contains(card) || opponent_hand_known.contains(card)) {
             return 0.0;
         }
@@ -280,6 +287,7 @@ public class SiftAgent implements GinRummyPlayer {
     // Confusingly, this method is also used to report the initial face-up card at the start of a game.
     @Override
     public boolean willDrawFaceUpCard(Card card) {
+//        discard_pile.push(card);
         if (discard_pile.size() == 0) { // this is the initial face-up card
             discard_pile.push(card);
             if (!i_play_first) { // and we go second, so this card is gone forever
@@ -287,18 +295,19 @@ public class SiftAgent implements GinRummyPlayer {
                 return false;
             }
         }
-        boolean will_draw = makes_a_meld(card);
-        if (!will_draw) {
-            // if we don't draw this card, it's gone for good.
-            make_unavail(card);
-        }
-        return will_draw;
+        my_heuristic.faceupValue();
+//        boolean will_draw = makes_a_meld(card);
+//        if (!will_draw) {
+//            // if we don't draw this card, it's gone for good.
+//            make_unavail(card);
+//        }
+        //TODO set picked_up_discard appropriately
+        return false;
     }
 
     // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate hand later
     void undiscard(Card card) {
-        if ((discard_pile.size() > 0)
-            && (card == discard_pile.peek())){
+        if ((discard_pile.size() > 0) && (card.equals(discard_pile.peek()))){
             discard_pile.pop();
         }
     }
@@ -306,7 +315,7 @@ public class SiftAgent implements GinRummyPlayer {
     @Override
     public void reportDraw(int playerNum, Card drawnCard) {
         if (drawnCard != null) {
-            undiscard(drawnCard);
+            undiscard(drawnCard); // will remove this card from the discard if it's there
         }
 
         if (playerNum == my_number) {
@@ -314,30 +323,30 @@ public class SiftAgent implements GinRummyPlayer {
             my_hand.add(drawnCard);
         } else if (drawnCard != null) {
             opponent_hand_known.add(drawnCard);
+//            make_unavail(drawnCard); // TODO we don't know if we'll ever see this card again... we should decrement instead of making unavail probably. also we need to keep track of opponents melds in another data structure
         } else if (discard_pile.size() > 0) {
-            opponent_passed.add(discard_pile.peek());
+            opponent_passed.add(drawnCard);
         }
     }
 
     // Discard the card from our hand which is not part of a meld and worth the most deadwood points.
     //
-    // TODO: consider distance from possible melds?
     @Override
     public Card getDiscard() {
-        Card to_discard = null;
-        int max_deadwood = Integer.MIN_VALUE;
-        for (Card card : my_hand) {
-            if (in_meld(card)) {
-                continue;
-            }
-            int this_deadwood = GinRummyUtil.getDeadwoodPoints(card);
-            if (this_deadwood > max_deadwood) {
-                to_discard = card;
-                max_deadwood = this_deadwood;
-            }
-        }
-        my_hand.remove(to_discard);
-        return to_discard;
+//        Card to_discard = null;
+//        int max_deadwood = Integer.MIN_VALUE;
+//        for (Card card : my_hand) {
+//            if (in_meld(card)) {
+//                continue;
+//            }
+//            int this_deadwood = GinRummyUtil.getDeadwoodPoints(card);
+//            if (this_deadwood > max_deadwood) {
+//                to_discard = card;
+//                max_deadwood = this_deadwood;
+//            }
+//        }
+//        my_hand.remove(to_discard);
+        return my_hand.remove(0);
     }
     @Override
     public void reportDiscard(int playerNum, Card discardedCard) {
@@ -354,15 +363,15 @@ public class SiftAgent implements GinRummyPlayer {
     }
     @Override
     public ArrayList<ArrayList<Card>> getFinalMelds() {
-        ArrayList<ArrayList<Card>> best_melds = best_melds(my_hand);
-        if (best_melds == null) {
+        ArrayList<ArrayList<ArrayList<Card>>> melds = GinRummyUtil.cardsToBestMeldSets(my_hand);
+        ArrayList<ArrayList<Card>> best_melds;
+        if (melds.size() > 0){
+            best_melds = melds.get(0);
+        } else{
             best_melds = new ArrayList<ArrayList<Card>>();
         }
         if (opponent_melds != null) {
             // opponent has knocked, so we need to report our melds
-            if (best_melds == null){
-                return new ArrayList<ArrayList<Card>>();
-            }
             return best_melds;
         } else if (GinRummyUtil.getDeadwoodPoints(best_melds, my_hand) == 0) {
             // we have gin! go out

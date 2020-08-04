@@ -43,6 +43,10 @@ public class SimpleGinRummyPlayer implements GinRummyPlayer {
 	Card faceUpCard, drawnCard; 
 	ArrayList<Long> drawDiscardBitstrings = new ArrayList<Long>();
 
+	public SimpleGinRummyPlayer(){
+		random.setSeed(0);
+	}
+
 	@Override
 	public void startGame(int playerNum, int startingPlayerNum, Card[] cards) {
 		this.playerNum = playerNum;

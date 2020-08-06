@@ -6,219 +6,56 @@ import java.util.ArrayList;
 import ginrummy.Card;
 import ginrummy.GinRummyPlayer;
 import ginrummy.GinRummyUtil;
-import java.lang.Long;
+
 import java.lang.Integer;
-import java.util.Arrays;
 import java.util.Stack;
-import java.util.ArrayList;
-import siftagent.Heuristic;
-import java.io.*;
 
 
 public class SiftAgent implements GinRummyPlayer {
     static final int HAND_SIZE = 10;
 
-    // For each `suit` x `rank` x `length`, this matrix stores the distance we are from a straight with that
-    // `length` in that `suit` starting with that `rank`, that is, the number of cards we must draw to
-    // complete it. Straights which are impossible because they contain a discarded card are marked with the
-    // sentinel `MELD_IMPOSSIBLE`, and straights which we hold in are hand are marked with zero, conveninetly
-    // aliased `HAVE_THIS_MELD`.
-    int[][][] straight_distances = new int[Card.NUM_SUITS][Card.NUM_RANKS][HAND_SIZE];
-
-    // For each `rank` x `n`, this matrix stores the distance we are from an `n`-of-a-kind match of that
-    // `rank`.
-    //
-    // TODO: figure out some way to represent the number of available cards which complete a given
-    // 3-of-a-kind. If we have `2C` and `2S`, `match_distances[2 - 1][3 - 1]` is 1 as long as either `2H` or
-    // `2D` or both are still in the deck.
-    int[][] match_distances = new int[Card.NUM_RANKS][Card.NUM_SUITS];
-
-    // The distance (i.e. number of required cards) to complete a meld which is entierly in our hand is zero.
-    static final int HAVE_THIS_MELD = 0;
-    // Melds which cannot be completed because they contain cards we've seen discarded are maked with this
-    // sentinel.
-    static final int MELD_IMPOSSIBLE = -1;
-    // The smallest melds that are actually worth points (or rather, not worth points) have 3 cards.
-    static final int SMALLEST_MELD = 3;
-
-    // Some straights are impossible because there just aren't that many cards. For example, you can't build a
-    // straight of 11 cards because you only get 10 cards in hand, and you can't build a 5-card straight
-    // starting with a 10 because there isn't a fifth card after the king.
-    boolean straight_possible(int start_rank, int length) {
-        return ((start_rank + length) < Card.NUM_RANKS) && (length <= HAND_SIZE);
-    }
-
-    // Before you've seen any cards, you're `n` away from each `n`-of-a-kind.
-    void init_match_distances() {
-        for (int rank = 0; rank < Card.NUM_RANKS; rank++) {
-            for (int match_size = 1; match_size < Card.NUM_SUITS; match_size++) {
-                match_distances[rank][match_size - 1] = match_size;
-            }
-        }
-    }
-
-    // Before you've seen any cards, you're `n` away from each run-of-`n`, except that some of them are
-    // impossible.
-    void init_straight_distances() {
-        for (int suit = 0; suit < Card.NUM_SUITS; suit++) {
-            for (int rank = 0; rank < Card.NUM_RANKS; rank++) {
-                for (int straight_len = 1; straight_len <= HAND_SIZE; straight_len++) {
-                    // initialize any impossible straights as such, so we don't try to build them
-                    straight_distances[suit][rank][straight_len - 1]
-                        = straight_possible(rank, straight_len) ? straight_len : MELD_IMPOSSIBLE;
-                }
-            }
-        }
-    }
-
-    // Mark each of the straights containing `card` as being impossible.
-    void make_unavail_in_straight(Card card) {
-        int my_rank = card.getRank();
-        int suit = card.getSuit();
-        for (int straight_len = 1; straight_len <= HAND_SIZE; straight_len++) {
-            for (int rank = my_rank;
-                 (rank > my_rank - straight_len) && (rank >= 0);
-                 rank--) {
-                straight_distances[suit][rank][straight_len - 1] = MELD_IMPOSSIBLE;
-            }
-        }
-    }
-
-    // Mark the matche requiring `card` as being impossible.
-    //
-    // Note that at any given time, exactly one match depends on a given card: if this is the first card of
-    // that rank, the 4-of-a-kind is now impossible, but the 3-of-a-kind remains available. If this is the
-    // second, the 3-of-a-kind is now impossible, but the 2-of-a-kind is available (although useless).
-    void make_unavail_in_match(Card card) {
-        int rank = card.getRank();
-        boolean next_possible = false;
-        for (int match_size = Card.NUM_SUITS;
-             (!next_possible) && (match_size > 0);
-             match_size--) {
-            if (match_distances[rank][match_size - 1] != MELD_IMPOSSIBLE) {
-                // If the 4-of-a-kind of `rank` is still possible, mark it impossible. Otherwise, proceed to
-                // the 3-of-a-kind, and so forth.
-                next_possible = true;
-                match_distances[rank][match_size - 1] = MELD_IMPOSSIBLE;
-            }
-        }
-    }
-
-    // Returns the number of cards not in our hand required to make any straight containing `card`.
-    //
-    // See the comment on `distance_from_nearest_meld` for some nuance regarding what that value means.
-    int distance_from_nearest_straight(Card card) {
-        int min = Integer.MAX_VALUE;
-        int suit = card.getSuit();
-        int my_rank = card.getRank();
-
-        // you only have to check all three of the three-card melds
-        // containing this card, because it will be at least as close
-        // to each of them as to each 4-card meld
-        for (int rank = my_rank;
-             (rank > 0) && ((my_rank - rank) <= SMALLEST_MELD);
-             rank--) {
-            int this_meld = straight_distances[suit][rank][SMALLEST_MELD - 1];
-            if (this_meld != MELD_IMPOSSIBLE) {
-                min = Integer.min(this_meld, min);
-            }
-        }
-        return min;
-    }
-
-    // Returns the number of cards not in our hand, required to make any match containing `card`.
-    //
-    // See the comment on `distance_from_nearest_meld` for some nuance regarding what that value means.
-    int distance_from_nearest_match(Card card) {
-        int rank = card.getRank();
-        // you only have to check the 3-card match, because it will be
-        // at least as close as the 4-card meld.
-        int this_meld = match_distances[rank][SMALLEST_MELD - 1];
-        if (this_meld == MELD_IMPOSSIBLE) {
-            return Integer.MAX_VALUE;
-        } else {
-            return this_meld;
-        }
-    }
-
-    // Returns the number of cards not in our hand required to make a meld containing `card`.
-    //
-    // This means slightly different things depending on whether `card` is already in our hand or not.
-    //
-    // If `card` is already in our hand, then zero means it is part of a complete meld; one means that we
-    // need to draw one card to make the nearest meld, and so forth.
-    //
-    // If `card` is not in our hand, then zero means that we already have a complete meld in our hand to which
-    // `card` can be added; one means that `card` completes a meld in our hand; two means that we would need
-    // another card in addition to `card` to complete a meld, and so forth.
-    int distance_from_nearest_meld(Card card) {
-        return Integer.min(distance_from_nearest_match(card), distance_from_nearest_straight(card));
-    }
-
-    // True if `card` is part of a meld in our hand.
-    //
-    // This should be called on cards which are already in our hand.
-    boolean in_meld(Card card) {
-        return distance_from_nearest_meld(card) == 0;
-    }
-
-    // True if `card` completes a meld in our hand.
-    //
-    // This should be called on cards we intend to draw which are not yet in our hand.
-    boolean makes_a_meld(Card card) {
-        int distance = distance_from_nearest_meld(card);
-        if ((distance == 0) || (distance == 1)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // Mark each of the melds containing `card` as being impossible because that card is in the discard pile.
-    void make_unavail(Card card) {
-        make_unavail_in_straight(card);
-        make_unavail_in_match(card);
-    }
-
-    // Reduce the distance of each straight containing `card` by one because we have drawn it.
-    void make_straights_nearer(Card card) {
-        int suit = card.getSuit();
-        int my_rank = card.getRank();
-        for (int rank = card.getRank(),
-                 length_to_reach = 1;
-             rank > 0;
-             rank--, length_to_reach++) {
-            for (int straight_length = length_to_reach;
-                 ((rank + straight_length) < Card.NUM_RANKS) && (straight_length <= HAND_SIZE);
-                 straight_length++) {
-                if (straight_distances[suit][rank][straight_length - 1] != MELD_IMPOSSIBLE) {
-                    straight_distances[suit][rank][straight_length - 1]--;
-                }
-            }
-        }
-    }
-
-    // Reduce the distance of each match containing `card` because we have drawn it.
-    void make_matches_nearer(Card card) {
-        int rank = card.getRank();
-        for (int match_size = 1;
-             match_size < Card.NUM_SUITS;
-             match_size++) {
-            if (match_distances[rank][match_size - 1] != MELD_IMPOSSIBLE) {
-                match_distances[rank][match_size - 1]--;
-            }
-        }
-    }
-
-    // Reduce the distance of each meld containing `card` because we have drawn it.
-    void make_nearer(Card card) {
-        make_matches_nearer(card);
-        make_straights_nearer(card);
-    }
-
     public boolean i_play_first;
     public int my_number;
     public Card picked_up_discard = null;
+
+    // assuming the cards are in order lowest to highest...
+    public static boolean is_straight_meld(ArrayList<Card> l){
+        if (l.size() < 3 || l.size() > 10){
+            return false;
+        }
+        for (int i=0; i<l.size(); i++){
+            if (i+1 < l.size()){
+                if (!(l.get(i).suit == l.get(i+1).suit)){ // transitive property
+//                    System.out.println("suits don't match");
+                    return false;
+                }
+                if (!(l.get(i+1).rank == l.get(i).rank + 1)){
+//                    System.out.println("not sequential");
+                    return false;
+                }
+            }
+        }
+
+        return true;
+
+    }
+    public static boolean is_match_meld(ArrayList<Card> l){
+        if (l.size() < 3 || l.size() > 4){
+            return false;
+        }
+        for (int i=0; i<l.size(); i++){
+            if (i+1 < l.size()){
+                if (!(l.get(i).suit == l.get(i+1).suit)){
+                    return false;
+                }
+                if (!(l.get(i).rank == l.get(i+1).rank)){
+                    return false;
+                }
+
+            }
+        }
+        return true;
+    }
 
     // cards in our hand
     public ArrayList<Card> my_hand = new ArrayList<Card>(HAND_SIZE);
@@ -233,11 +70,12 @@ public class SiftAgent implements GinRummyPlayer {
     public ArrayList<ArrayList<Card>> opponent_melds;
 
     private final Heuristic my_heuristic = new Heuristic(this);
+    public final DistanceTable my_distances = new DistanceTable(this);
 
 
     void reset_for_new_hand() {
-        init_straight_distances();
-        init_match_distances();
+        my_distances.reset_tables();
+//        my_distances.show_straight_tables();
         my_hand.clear();
         opponent_hand_known.clear();
         opponent_passed.clear();
@@ -249,21 +87,27 @@ public class SiftAgent implements GinRummyPlayer {
         return Card.NUM_CARDS - my_hand.size() - opponent_hand_known.size() - discard_pile.size();
     }
 
+
+
     public double probability_to_draw(Card card) {
         if (discard_pile.contains(card) || opponent_hand_known.contains(card)) {
             return 0.0;
         }
         return 1.0 / (double)num_remaining_cards();
     }
+    // TODO sum of distance_from_meld * (1/num_cards--)
+    public double probability_to_get_meld(Card card){
+        return 0.0;
+    }
 
     // Returns the set of melds in our hand which minimizes deadwood in our hand, ignoring the possibility of
     // laying off cards on our opponent's melds.
     //
     // TODO: consider the possibility of laying off cards on our opponent's melds.
-    static ArrayList<ArrayList<Card>> best_melds(ArrayList<Card> hand) {
+    public static ArrayList<ArrayList<Card>> get_best_melds(ArrayList<Card> hand) {
         ArrayList<ArrayList<Card>> best_set = null;
         int best_deadwood = Integer.MAX_VALUE;
-        for (ArrayList<ArrayList<Card>> melds : GinRummyUtil.cardsToAllMaximalMeldSets(hand)) {
+        for (ArrayList<ArrayList<Card>> melds : GinRummyUtil.cardsToBestMeldSets(hand)) {
             int new_deadwood = GinRummyUtil.getDeadwoodPoints(melds, hand);
             if (new_deadwood < best_deadwood) {
                 best_deadwood = new_deadwood;
@@ -281,8 +125,42 @@ public class SiftAgent implements GinRummyPlayer {
         i_play_first = my_number == startingPlayerNum;
         for (Card card : cards) {
             my_hand.add(card);
-            make_nearer(card);
+            my_distances.make_nearer(card);
         }
+//        System.out.println("Starting game with hand " + my_hand);
+//        my_distances.show_straight_tables();
+
+//        reset_for_new_hand();
+//        my_number = playerNum;
+//        my_distances.show_straight_tables();
+//        my_distances.show_match_tables();
+//
+//        ArrayList<Card> cardsToAdd = new ArrayList<Card>();
+//
+//        cardsToAdd.add(new Card(0, 0));
+//        cardsToAdd.add(new Card(1, 0));
+//        cardsToAdd.add(new Card(2, 0));
+//        cardsToAdd.add(new Card(0, 1));
+//        cardsToAdd.add(new Card(0, 2));
+//        cardsToAdd.add(new Card(1, 3));
+//        cardsToAdd.add(new Card(10, 0));
+//        cardsToAdd.add(new Card(7, 2));
+//        cardsToAdd.add(new Card(3, 0));
+//        cardsToAdd.add(new Card(4, 1));
+//
+//        System.out.println("will be adding these cards to my hand: " + cardsToAdd);
+//
+//        for (Card c: cardsToAdd){
+//            System.out.println("adding " + c + " to my hand, here's the straight tables: ");
+//            my_hand.add(c);
+//            my_distances.make_nearer(c);
+//            my_distances.show_straight_tables();
+//            my_distances.show_match_tables();
+//        }
+//
+//        System.out.println("My beginning hand: " + my_hand);
+//        my_distances.show_straight_tables();
+//        my_distances.show_match_tables();
     }
     // Confusingly, this method is also used to report the initial face-up card at the start of a game.
     @Override
@@ -291,18 +169,18 @@ public class SiftAgent implements GinRummyPlayer {
         if (discard_pile.size() == 0) { // this is the initial face-up card
             discard_pile.push(card);
             if (!i_play_first) { // and we go second, so this card is gone forever
-                make_unavail(card);
+                my_distances.make_unavail(card);
                 return false;
             }
         }
-        my_heuristic.faceupValue();
-//        boolean will_draw = makes_a_meld(card);
-//        if (!will_draw) {
-//            // if we don't draw this card, it's gone for good.
-//            make_unavail(card);
-//        }
-        //TODO set picked_up_discard appropriately
-        return false;
+        if (my_heuristic.faceupValue() > my_heuristic.facedownValue()){
+            picked_up_discard = card;
+            return true;
+        } else{
+            my_distances.make_unavail(card);
+            return false;
+        }
+
     }
 
     // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate hand later
@@ -319,7 +197,10 @@ public class SiftAgent implements GinRummyPlayer {
         }
 
         if (playerNum == my_number) {
-            make_nearer(drawnCard);
+//            System.out.println("My hand: " + my_hand);
+//            System.out.println("Drew " + drawnCard);
+            my_distances.make_nearer(drawnCard);
+//            my_distances.show_straight_tables();
             my_hand.add(drawnCard);
         } else if (drawnCard != null) {
             opponent_hand_known.add(drawnCard);
@@ -346,7 +227,9 @@ public class SiftAgent implements GinRummyPlayer {
 //            }
 //        }
 //        my_hand.remove(to_discard);
-        return my_hand.remove(0);
+        Card discard = my_heuristic.leastImportantCard();
+        my_hand.remove(discard);
+        return discard;
     }
     @Override
     public void reportDiscard(int playerNum, Card discardedCard) {
@@ -354,7 +237,8 @@ public class SiftAgent implements GinRummyPlayer {
 
         if (playerNum == my_number) {
             // cards we discard are gone for good; we can never draw them.
-            make_unavail(discardedCard);
+//            System.out.println("Discarded " + discardedCard);
+            my_distances.make_unavail(discardedCard);
         } else {
             // try to remove card from opponent's known hand, since they no longer have it
             opponent_hand_known.remove(discardedCard);
@@ -373,7 +257,7 @@ public class SiftAgent implements GinRummyPlayer {
         if (opponent_melds != null) {
             // opponent has knocked, so we need to report our melds
             return best_melds;
-        } else if (GinRummyUtil.getDeadwoodPoints(best_melds, my_hand) == 0) {
+        } else if (my_heuristic.knock()) {
             // we have gin! go out
             return best_melds;
         } else {

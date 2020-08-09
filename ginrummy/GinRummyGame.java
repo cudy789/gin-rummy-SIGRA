@@ -310,15 +310,15 @@ public class GinRummyGame {
 	 */
 	public static void main(final String[] args) {
 // 		// Single verbose demonstration game
-// 		setPlayVerbose(true);
-// //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-// 		new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent()).play();
+		setPlayVerbose(true);
+//		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
+		new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(1.0)).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);
 		final int numGames = 50;
 		int numP1Wins = 0;
-		final GinRummyGame game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(), new NaiveDeadwoodMinimizingAgent());
+		final GinRummyGame game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(1.0), new SecondOrderDeadwoodMinimizingAgent(0.75));
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			int p = game.play();

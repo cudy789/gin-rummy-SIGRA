@@ -12,6 +12,13 @@ import java.util.stream.Collectors;
 
 public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
 
+    double REDUCTION_WEIGHT = 1.0;
+
+    public SecondOrderDeadwoodMinimizingAgent(double ReductionWeight) {
+        super();
+        this.REDUCTION_WEIGHT = ReductionWeight;
+    }
+
   @Override
   public BinaryOperator<ArrayList<Card>> accumulator(ArrayList<Card> unknowns) {
     return (a, b) -> {
@@ -102,13 +109,13 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   }
 
   Function<ArrayList<Card>, Double> secondOrderApproximation(ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
-      return (hand) -> {
-        int n = unknowns.size();
-        Hashtable<Card, ArrayList<Card>> table = meldsOneAway(initialHand, unknowns);
-        Double reduction = table.entrySet().stream().collect(Collectors.reducing(0.0, (entry) -> {
-            return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey()) * ((double) entry.getValue().size()/(double) n);
-        }, (a, b) -> { return a + b; }));
-        return deadwoodMinusMelds(hand) - reduction;
-      };
-  }
+    return (hand) -> {
+      int n = unknowns.size();
+      Hashtable<Card, ArrayList<Card>> table = meldsOneAway(initialHand, unknowns);
+      Double reduction = table.entrySet().stream().collect(Collectors.reducing(0.0, (entry) -> {
+          return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey()) * ((double) entry.getValue().size()/(double) n);
+      }, (a, b) -> { return a + b; }));
+      return deadwoodMinusMelds(hand) - (this.REDUCTION_WEIGHT * reduction);
+    };
+}
 }

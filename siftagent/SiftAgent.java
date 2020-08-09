@@ -1,203 +1,227 @@
 package siftagent;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-
 import ginrummy.Card;
 import ginrummy.GinRummyPlayer;
 import ginrummy.GinRummyUtil;
-import java.lang.Long;
-import java.lang.Integer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
-import java.util.ArrayList;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
+import java.util.stream.Stream;
 
 public class SiftAgent implements GinRummyPlayer {
-    static final int HAND_SIZE = 10;
-    int[][][] straight_cards_avail = new int[Card.NUM_SUITS][Card.NUM_RANKS][HAND_SIZE];
+  static final int HAND_SIZE = 10;
 
-    static final int HAVE_THIS_MELD = 0;
-    static final int MELD_IMPOSSIBLE = -1;
+  int my_score;
+  int opponent_score;
 
-    boolean straight_possible(int suit, int start_rank, int length) {
-        return ((start_rank + length) < Card.NUM_RANKS) && (length <= HAND_SIZE);
+  boolean i_play_first;
+  int my_number;
+
+  // cards in our hand
+  ArrayList<Card> my_hand;
+  // known cards in opponent's hand
+  ArrayList<Card> opponent_hand_known;
+  // cards that we discarded and our opponent didn't pick up
+  ArrayList<Card> opponent_passed;
+  // cards in the discard pile (including the top card after any player discards)
+  Stack<Card> discard_pile;
+
+  // list of list of opponent's melds, used when knocking
+  ArrayList<ArrayList<Card>> opponent_melds;
+
+  void reset_for_new_hand() {
+    my_hand = new ArrayList<Card>();
+    opponent_hand_known = new ArrayList<Card>();
+    opponent_passed = new ArrayList<Card>();
+    opponent_melds = null;
+    discard_pile = new Stack<Card>();
+  }
+
+  // despite being called `startGame`, this function is called at the start of each new hand.
+  @Override
+  public void startGame(int playerNum, int startingPlayerNum, Card[] cards) {
+    reset_for_new_hand();
+    my_number = playerNum;
+    i_play_first = my_number == startingPlayerNum;
+    my_hand = new ArrayList<Card>(Arrays.asList(cards));
+  }
+
+  @Override
+  public boolean willDrawFaceUpCard(Card card) {
+    double averageUnknowns = computeExpectedDeadwoodOfUnknowns();
+    Card cardToDiscardIfFaceUpPicked = drawAndPickBestDiscard(card, pickHandWithLeastDeadwood);
+
+    // If true, pick up Face Up card.
+    ArrayList<Card> handAfterPickingFaceUpCard =
+        this.handDrawingAndDiscarding(card, cardToDiscardIfFaceUpPicked);
+    if (deadwoodMinusMelds(handAfterPickingFaceUpCard) < averageUnknowns) {
+      my_hand = handAfterPickingFaceUpCard;
+      return true;
+    } else {
+      // We will draw a random card. Add the Face Up card to our copy of the discard pile.
+      discard_pile.push(card);
+      return false;
     }
+  }
 
-    void init_straight_avail() {
-        for (int suit = 0; suit < Card.NUM_SUITS; suit++) {
-            for (int rank = 0; rank < Card.NUM_RANKS; rank++) {
-                for (int straight_len = 1; straight_len <= HAND_SIZE; straight_len++) {
-                    if (straight_possible(suit, rank, straight_len)) {
-                        straight_cards_avail[suit][rank][straight_len - 1] = straight_len;
-                    } else {
-                        straight_cards_avail[suit][rank][straight_len - 1] = MELD_IMPOSSIBLE;
-                    }
-                }
-            }
-        }
+  @Override
+  public void reportDraw(int playerNum, Card drawnCard) {
+    // we pushed the faceup card onto the discard_pile in wilLDrawFaceUpCard
+    if (discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
+      // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate
+      // hand later
+      discard_pile.pop();
+    } else if (playerNum != my_number) {
+      // it's not our turn and our opponent passed on the top card
+      opponent_passed.add(drawnCard);
     }
-
-//    static int bitstring_id(long card) {
-//        return Long.numberOfTrailingZeros(card);
-//    }
-    
-//    static Card bitstring_card(long card) {
-//        return Card.getCard(bitstring_id(card));
-//    }
-
-//    static long card_bitstring(Card card) {
-//        return 1 << card.getId();
-//    }
-
-    void make_unavail_in_straight(Card card) {
-        int suit = card.getSuit();
-        int rank = card.getRank();
-        for (int straight_len = 1; straight_len <= HAND_SIZE; straight_len++) {
-            straight_cards_avail[suit][rank][straight_len - 1] = MELD_IMPOSSIBLE;
-            
-            for (int other_rank = rank - straight_len;
-                 straight_possible(suit, other_rank, straight_len)
-                     && (other_rank < rank);
-                 other_rank++) {
-                straight_cards_avail[suit][rank][straight_len - 1] = MELD_IMPOSSIBLE;
-            }
-        }
+    if (playerNum == my_number) {
+      my_hand.add(drawnCard);
+    } else {
+      opponent_hand_known.add(drawnCard);
     }
+  }
 
-//    void make_unavail(long card) {
-//        Card boxed = bitstring_card(card);
-//        make_unavail_in_straight(boxed);
-//    }
+  @Override
+  public Card getDiscard() {
+    // TODO: uhhhhh... just give 'em a card from our hand
+    return my_hand.remove(0);
+  }
 
-//    static final long UNKNOWN_CARD = -1;
-
-    int my_score;
-    int opponent_score;
-
-    boolean i_play_first;
-    int my_number;
-//    long my_hand;
-//    long opponent_hand_known;
-//    long opponent_passed;
-//    long discard;
-//    long top_discard = UNKNOWN_CARD;
-
-    // cards in our hand
-    ArrayList<Card> my_hand;
-    // known cards in opponent's hand
-    ArrayList<Card> opponent_hand_known;
-    // cards that we discarded and our opponent didn't pick up
-    ArrayList<Card> opponent_passed;
-    // cards in the discard pile (including the top card after any player discards)
-    Stack<Card> discard_pile;
-
-//    static final long FULL_DECK = (1 << Card.NUM_CARDS) - 1;
-    
-//    ArrayList<Long> opponent_melds;
-
-    // list of list of opponent's melds, used when knocking
-    ArrayList<ArrayList<Card>> opponent_melds;
-
-    void reset_for_new_hand() {
-        init_straight_avail();
-        my_hand = new ArrayList<Card>();
-        opponent_hand_known = new ArrayList<Card>();
-        opponent_passed = new ArrayList<Card>();
-        opponent_melds = null;
-        discard_pile = new Stack<Card>();
+  @Override
+  public void reportDiscard(int playerNum, Card discardedCard) {
+    discard_pile.push(discardedCard);
+    if (playerNum != my_number) {
+      opponent_hand_known.remove(discardedCard); // try to remove card from opponent's known hand
     }
+  }
 
-    ArrayList<Card> remaining_cards() {
-        ArrayList<Card> rem_cards = new ArrayList<Card>();
-        for (Card c : Card.allCards){
-            if (!my_hand.contains(c) && !opponent_hand_known.contains(c) && !discard_pile.contains(c)){
-                rem_cards.add(c);
-            }
-        }
-        return rem_cards;
+  @Override
+  public ArrayList<ArrayList<Card>> getFinalMelds() {
+    // we never initiate a knock, so we only report melds if the other player knocks
+    if (opponent_melds != null) {
+      return GinRummyUtil.cardsToBestMeldSets(my_hand).get(0);
     }
+    return null;
+  }
 
-    double probability_to_draw(long card) {
-        return 1.0 / (double)remaining_cards().size();
+  @Override
+  public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {
+    if (playerNum != my_number) {
+      opponent_melds = melds;
     }
+  }
 
-    static ArrayList<ArrayList<Card>> best_melds(ArrayList<Card> hand) {
-        ArrayList<ArrayList<Card>> best_set = null;
-        int best_deadwood = Integer.MAX_VALUE;
-        for (ArrayList<ArrayList<Card>> melds : GinRummyUtil.cardsToAllMaximalMeldSets(hand)) {
-            int new_deadwood = GinRummyUtil.getDeadwoodPoints(melds, hand);
-            if (new_deadwood < best_deadwood) {
-                best_deadwood = new_deadwood;
-                best_set = melds;
-            }
-        }
-        return best_set;
-    }
+  @Override
+  public void reportScores(int[] scores) {
+    my_score += scores[my_number];
+    opponent_score += scores[(my_number + 1) % 2];
+  }
 
-    // despite being called `startGame`, this function is called at the start of each new hand.
-    @Override
-    public void startGame(int playerNum, int startingPlayerNum, Card[] cards) {
-        reset_for_new_hand();
-        my_number = playerNum;
-        i_play_first = my_number == startingPlayerNum;
-        my_hand = new ArrayList<Card>(Arrays.asList(cards));
-    }
-    @Override
-    public boolean willDrawFaceUpCard(Card card) {
-        discard_pile.push(card);
-        // TODO: uhhhh... never draw the faceup card
-        return false;
-    }
-    @Override
-    public void reportDraw(int playerNum, Card drawnCard) {
-        // we pushed the faceup card onto the discard_pile in wilLDrawFaceUpCard
-        if(discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())){ // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate hand later
-            discard_pile.pop();
-        } else if (playerNum != my_number){ // it's not our turn and our opponent passed on the top card
-            opponent_passed.add(drawnCard);
-        }
-        if (playerNum == my_number) {
-            my_hand.add(drawnCard);
+  @Override
+  public void reportLayoff(int playerNum, Card layoffCard, ArrayList<Card> opponentMeld) {}
+
+  @Override
+  public void reportFinalHand(int playerNum, ArrayList<Card> hand) {}
+
+  ArrayList<Card> unknownCards() {
+    ArrayList<Card> rv = new ArrayList<Card>(Arrays.asList(Card.allCards));
+    rv.removeAll(this.discard_pile);
+    rv.removeAll(this.my_hand);
+    rv.removeAll(this.opponent_hand_known);
+    return rv;
+  }
+
+  Stream<ArrayList<Card>> enumeratePossibleHandsByAddingFrom(ArrayList<Card> cards) {
+    return cards.parallelStream()
+        .map(
+            (drawn) -> {
+              return this.my_hand.stream()
+                  .map(
+                      (discarded) -> {
+                        ArrayList<Card> x = new ArrayList<Card>(this.my_hand);
+                        x.remove(discarded);
+                        x.add(drawn);
+                        return x;
+                      });
+            })
+        .reduce(
+            (a, b) -> {
+              return Stream.concat(a, b);
+            })
+        .orElse(Stream.empty());
+  }
+
+  double computeExpectedDeadwoodOfUnknowns() {
+    // For each possible card we could draw, figure out the best way we could discard.
+    return unknownCards().parallelStream()
+        .map(drawAndPickBestDiscardMapper(pickHandWithLeastDeadwood))
+        .mapToInt(computeDeadwoodOfHandMapper)
+        .average()
+        .orElse(Double.MAX_VALUE);
+  }
+
+  Card drawAndPickBestDiscard(Card drawn, BinaryOperator<ArrayList<Card>> accumulator) {
+    ArrayList<Card> bestHand =
+        // Possibly could be parallelStream() but this might be faster, because less mess of
+        // threads?
+        this.my_hand.stream()
+            .map(discardAndAddDrawnCardMapper(drawn))
+            .reduce(pickHandWithLeastDeadwood)
+            .orElse(new ArrayList<Card>());
+    // This should always have exactly one card
+    ArrayList<Card> rv = diffHands(bestHand, this.my_hand);
+    return rv.get(0);
+  }
+
+  BinaryOperator<ArrayList<Card>> pickHandWithLeastDeadwood =
+      (a, b) -> {
+        if (deadwoodMinusMelds(a) < deadwoodMinusMelds(b)) {
+          return a;
         } else {
-            opponent_hand_known.add(drawnCard);
+          return b;
         }
-    }
-    @Override
-    public Card getDiscard() {
-        // TODO: uhhhhh... just give 'em a card from our hand
-        return my_hand.remove(0);
-    }
-    @Override
-    public void reportDiscard(int playerNum, Card discardedCard) {
-        discard_pile.push(discardedCard);
-        if (playerNum != my_number){
-            opponent_hand_known.remove(discardedCard); // try to remove card from opponent's known hand
-        }
-    }
-    @Override
-    public ArrayList<ArrayList<Card>> getFinalMelds() {
-        if (opponent_melds != null) { // we never initiate a knock, so we only report melds if the other player knocks
-            ArrayList<ArrayList<Card>> best_melds = best_melds(my_hand);
-            if (best_melds == null){
-                return new ArrayList<ArrayList<Card>>();
-            }
-            return best_melds; // the simpleginrummyplayer grabs a random set of melds from here, does it matter which one we choose???
-        }
-        return null;
-    }
-    @Override
-    public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {
-        if (playerNum != my_number) {
-            opponent_melds = melds;
-        }
-    }
-    @Override
-    public void reportScores(int[] scores) {
-        my_score += scores[my_number];
-        opponent_score += scores[(my_number + 1) % 2];
-    }
-    @Override
-    public void reportLayoff(int playerNum, Card layoffCard, ArrayList<Card> opponentMeld) {}
-    @Override
-    public void reportFinalHand(int playerNum, ArrayList<Card> hand) {}
+      };
+
+  // Maps an ArrayList<Card> to its DeadwoodMinusMelds
+  ToIntFunction<? super ArrayList<Card>> computeDeadwoodOfHandMapper =
+      (x) -> {
+        return deadwoodMinusMelds(x);
+      };
+
+  Function<? super Card, ArrayList<Card>> discardAndAddDrawnCardMapper(Card drawn) {
+    return (discarded) -> {
+      return this.handDrawingAndDiscarding(drawn, discarded);
+    };
+  }
+
+  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper(
+      BinaryOperator<ArrayList<Card>> accumulator) {
+    return (drawn) -> {
+      ArrayList<Card> x = new ArrayList<Card>(this.my_hand);
+      x.remove(drawAndPickBestDiscard(drawn, accumulator));
+      x.add(drawn);
+      return x;
+    };
+  }
+
+  ArrayList<Card> handDrawingAndDiscarding(Card drawn, Card discarded) {
+    ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);
+    rv.remove(discarded);
+    rv.add(drawn);
+    return rv;
+  }
+
+  static int deadwoodMinusMelds(ArrayList<Card> hand) {
+    return GinRummyUtil.getDeadwoodPoints(GinRummyUtil.cardsToBestMeldSets(hand).get(0), hand);
+  }
+
+  static ArrayList<Card> diffHands(ArrayList<Card> a, ArrayList<Card> b) {
+    ArrayList<Card> rv = new ArrayList<Card>(a);
+    rv.removeAll(b);
+    return rv;
+  }
 }

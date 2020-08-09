@@ -6,6 +6,7 @@ import java.util.Random;
 import java.util.Stack;
 
 import siftagent.NaiveDeadwoodMinimizingAgent;
+import siftagent.SecondOrderDeadwoodMinimizingAgent;
 import siftagent.SiftAgent;
 import ginrummy.StubbornSimpleGinRummyPlayer;
 
@@ -308,16 +309,16 @@ public class GinRummyGame {
 	 * @param args (unused)
 	 */
 	public static void main(final String[] args) {
-		// Single verbose demonstration game
-		setPlayVerbose(true);
-//		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-		new GinRummyGame(new SimpleGinRummyPlayer(), new NaiveDeadwoodMinimizingAgent()).play();
+// 		// Single verbose demonstration game
+// 		setPlayVerbose(true);
+// //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
+// 		new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent()).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);
-		final int numGames = 1000;
+		final int numGames = 50;
 		int numP1Wins = 0;
-		final GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new NaiveDeadwoodMinimizingAgent());
+		final GinRummyGame game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(), new NaiveDeadwoodMinimizingAgent());
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			int p = game.play();

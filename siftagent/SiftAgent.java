@@ -6,7 +6,6 @@ import ginrummy.GinRummyUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
-import java.util.Random;
 import java.util.Stack;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -48,10 +47,12 @@ public abstract class SiftAgent implements GinRummyPlayer {
     opponent_melds = null;
     discard_pile = new Stack<Card>();
     if (deadwoodHashTable == null) {
-        deadwoodHashTable = new Hashtable<ArrayList<Card>, ArrayList<ArrayList<ArrayList<Card>>>>(DEADWOOD_HASHTABLE_SIZE);
+      deadwoodHashTable =
+          new Hashtable<ArrayList<Card>, ArrayList<ArrayList<ArrayList<Card>>>>(
+              DEADWOOD_HASHTABLE_SIZE);
     }
     if (deadwoodHashTable.size() > DEADWOOD_HASHTABLE_SIZE) {
-        deadwoodHashTable.clear();
+      deadwoodHashTable.clear();
     }
   }
 
@@ -84,10 +85,10 @@ public abstract class SiftAgent implements GinRummyPlayer {
   public ArrayList<ArrayList<Card>> getFinalMelds() {
     // Only knock if we have gin.
     if (this.haveGin() || opponent_melds != null) {
-        ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(my_hand);
-        if (bestMelds.isEmpty()) {
-            return new ArrayList<ArrayList<Card>>();
-        }
+      ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(my_hand);
+      if (bestMelds.isEmpty()) {
+        return new ArrayList<ArrayList<Card>>();
+      }
       return bestMelds.get(0);
     }
     return null;
@@ -129,6 +130,18 @@ public abstract class SiftAgent implements GinRummyPlayer {
     return rv;
   }
 
+  ArrayList<Card> unknownCardsMinus(ArrayList<Card> cards) {
+    ArrayList<Card> rv = this.unknownCards();
+    rv.removeAll(cards);
+    return rv;
+  }
+
+  ArrayList<Card> unknownCardsMinus(Card card) {
+    ArrayList<Card> rv = this.unknownCards();
+    rv.remove(card);
+    return rv;
+  }
+
   Stream<ArrayList<Card>> enumeratePossibleHandsByAddingFrom(ArrayList<Card> cards) {
     return cards.stream() // .parallel()
         .map(
@@ -149,77 +162,13 @@ public abstract class SiftAgent implements GinRummyPlayer {
         .orElse(Stream.empty());
   }
 
-  double computeExpectedDeadwoodOfUnknowns() {
-    // For each possible card we could draw, figure out the best way we could discard.
-    return unknownCards().stream().parallel()
-        .map(drawAndPickBestDiscardMapper(pickHandWithLeastDeadwood))
-        .mapToInt(computeDeadwoodOfHandMapper)
-        .average()
-        .orElse(Double.MAX_VALUE);
-  }
-
-  Card drawAndPickBestDiscard(Card drawn, BinaryOperator<ArrayList<Card>> accumulator) {
-    ArrayList<Card> tmp = new ArrayList<Card>(this.my_hand);
-    tmp.add(drawn);
-    ArrayList<Card> bestHand =
-    // Actually faster to run this sequentially, otherwise it probably bogs down the thread pool.
-        tmp.stream() // .parallel()
-            .map((c) -> {
-                ArrayList<Card> rv = new ArrayList<Card>(tmp);
-                rv.remove(c);
-                return rv;
-            })
-            .reduce(pickHandWithLeastDeadwood)
-            .orElseThrow();
-    ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
-    if (rv.isEmpty()) {
-        return drawn;
-    }
-    return rv.get(0);
-  }
-
-  BinaryOperator<ArrayList<Card>> pickHandWithLeastDeadwood =
-      (a, b) -> {
-        if (deadwoodMinusMelds(a) < deadwoodMinusMelds(b)) {
-          return a;
-        } else {
-          return b;
-        }
-      };
-
-  // Maps an ArrayList<Card> to its DeadwoodMinusMelds
-  ToIntFunction<? super ArrayList<Card>> computeDeadwoodOfHandMapper =
-      (x) -> {
-        return deadwoodMinusMelds(x);
-      };
-
-  Function<? super Card, ArrayList<Card>> discardAndAddDrawnCardMapper(Card drawn) {
-    return (discarded) -> {
-      return this.handByDrawingAndDiscarding(drawn, discarded);
-    };
-  }
-
-  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper(
-      BinaryOperator<ArrayList<Card>> accumulator) {
-    return (drawn) -> {
-      return this.handByDrawingAndDiscarding(drawn, drawAndPickBestDiscard(drawn, accumulator));
-    };
-  }
-
-  ArrayList<Card> handByDrawingAndDiscarding(Card drawn, Card discarded) {
-    ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);
-    rv.add(drawn);
-    rv.remove(discarded);
-    return rv;
-  }
-
-   int deadwoodMinusMelds(ArrayList<Card> hand) {
-    ArrayList<ArrayList<ArrayList<Card>>> bestMelds = deadwoodHashTable.get(hand);  
+  int deadwoodMinusMelds(ArrayList<Card> hand) {
+    ArrayList<ArrayList<ArrayList<Card>>> bestMelds = deadwoodHashTable.get(hand);
     if (bestMelds == null) {
-       bestMelds = GinRummyUtil.cardsToBestMeldSets(hand);
-       deadwoodHashTable.put(hand, bestMelds);
+      bestMelds = GinRummyUtil.cardsToBestMeldSets(hand);
+      deadwoodHashTable.put(hand, bestMelds);
     }
-    
+
     if (bestMelds.isEmpty()) {
       return GinRummyUtil.getDeadwoodPoints(hand);
     }

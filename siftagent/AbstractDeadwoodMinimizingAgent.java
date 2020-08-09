@@ -46,7 +46,7 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     if (playerNum == my_number) {
       cardToDiscard = drawAndPickBestDiscard(drawnCard);
       my_hand = this.handByDrawingAndDiscarding(drawnCard, cardToDiscard);
-    } else {
+    } else if (drawnCard != null) {
       opponent_hand_known.add(drawnCard);
     }
   }

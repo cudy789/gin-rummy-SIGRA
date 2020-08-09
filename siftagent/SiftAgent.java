@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Stack;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class SiftAgent implements GinRummyPlayer {
@@ -189,6 +190,40 @@ public abstract class SiftAgent implements GinRummyPlayer {
               return a + b;
             })
         .orElse(0);
+  }
+
+  ArrayList<ArrayList<Card>> getBestMeldsWrapper(ArrayList<Card> cards) {
+    ArrayList<ArrayList<ArrayList<Card>>> rv = GinRummyUtil.cardsToBestMeldSets(cards);
+    if (rv.isEmpty()) {
+      return new ArrayList<ArrayList<Card>>();
+    }
+    return rv.get(0);
+  }
+
+  ArrayList<Card> flattenMeldSet(ArrayList<ArrayList<Card>> melds) {
+    return melds.stream()
+        .collect(
+            Collectors.reducing(
+                new ArrayList<Card>(),
+                (x) -> {
+                  return x;
+                },
+                (a, b) -> {
+                  ArrayList<Card> rv = new ArrayList<Card>();
+                  rv.addAll(a);
+                  rv.addAll(b);
+                  return rv;
+                }));
+  }
+
+  static ArrayList<ArrayList<Card>> flattenMeldSets(
+      ArrayList<ArrayList<ArrayList<Card>>> meldSets) {
+    ArrayList<ArrayList<Card>> rv = new ArrayList<ArrayList<Card>>();
+    meldSets.forEach(
+        (set) -> {
+          rv.addAll(set);
+        });
+    return rv;
   }
 
   boolean willCardMakeOrJoinMeldInHand(Card card) {

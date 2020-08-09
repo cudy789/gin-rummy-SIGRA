@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
-public class SiftAgent implements GinRummyPlayer {
+public abstract class SiftAgent implements GinRummyPlayer {
   static final int HAND_SIZE = 10;
 
   int my_score;
@@ -32,6 +32,9 @@ public class SiftAgent implements GinRummyPlayer {
   // list of list of opponent's melds, used when knocking
   ArrayList<ArrayList<Card>> opponent_melds;
 
+  // Card to discard, set in reportDraw.
+  Card cardToDiscard;
+
   void reset_for_new_hand() {
     my_hand = new ArrayList<Card>();
     opponent_hand_known = new ArrayList<Card>();
@@ -50,45 +53,11 @@ public class SiftAgent implements GinRummyPlayer {
   }
 
   @Override
-  public boolean willDrawFaceUpCard(Card card) {
-    double averageUnknowns = computeExpectedDeadwoodOfUnknowns();
-    Card cardToDiscardIfFaceUpPicked = drawAndPickBestDiscard(card, pickHandWithLeastDeadwood);
-
-    // If true, pick up Face Up card.
-    ArrayList<Card> handAfterPickingFaceUpCard =
-        this.handDrawingAndDiscarding(card, cardToDiscardIfFaceUpPicked);
-    if (deadwoodMinusMelds(handAfterPickingFaceUpCard) < averageUnknowns) {
-      my_hand = handAfterPickingFaceUpCard;
-      return true;
-    } else {
-      // We will draw a random card. Add the Face Up card to our copy of the discard pile.
-      discard_pile.push(card);
-      return false;
-    }
-  }
-
-  @Override
-  public void reportDraw(int playerNum, Card drawnCard) {
-    // we pushed the faceup card onto the discard_pile in wilLDrawFaceUpCard
-    if (discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
-      // if the drawn card is the top of the discard, remove it. we'll add it to the appropriate
-      // hand later
-      discard_pile.pop();
-    } else if (playerNum != my_number) {
-      // it's not our turn and our opponent passed on the top card
-      opponent_passed.add(drawnCard);
-    }
-    if (playerNum == my_number) {
-      my_hand.add(drawnCard);
-    } else {
-      opponent_hand_known.add(drawnCard);
-    }
-  }
-
-  @Override
   public Card getDiscard() {
-    // TODO: uhhhhh... just give 'em a card from our hand
-    return my_hand.remove(0);
+    // Hand was already updated in reportDraw.
+    Card rv = this.cardToDiscard;
+    this.cardToDiscard = null;
+    return rv;
   }
 
   @Override
@@ -101,8 +70,8 @@ public class SiftAgent implements GinRummyPlayer {
 
   @Override
   public ArrayList<ArrayList<Card>> getFinalMelds() {
-    // we never initiate a knock, so we only report melds if the other player knocks
-    if (opponent_melds != null) {
+    // Only knock if we have gin.
+    if (this.haveGin() || opponent_melds != null) {
       return GinRummyUtil.cardsToBestMeldSets(my_hand).get(0);
     }
     return null;
@@ -126,6 +95,25 @@ public class SiftAgent implements GinRummyPlayer {
 
   @Override
   public void reportFinalHand(int playerNum, ArrayList<Card> hand) {}
+
+  boolean haveGin() {
+    ArrayList<ArrayList<ArrayList<Card>>> bestMelds =
+        GinRummyUtil.cardsToBestMeldSets(this.my_hand);
+    if (bestMelds.isEmpty()) {
+      return false;
+    }
+    return bestMelds.get(0).stream()
+            .mapToInt(
+                (x) -> {
+                  return x.size();
+                })
+            .reduce(
+                (a, b) -> {
+                  return a + b;
+                })
+            .orElse(0)
+        == this.HAND_SIZE;
+  }
 
   ArrayList<Card> unknownCards() {
     ArrayList<Card> rv = new ArrayList<Card>(Arrays.asList(Card.allCards));
@@ -166,14 +154,12 @@ public class SiftAgent implements GinRummyPlayer {
 
   Card drawAndPickBestDiscard(Card drawn, BinaryOperator<ArrayList<Card>> accumulator) {
     ArrayList<Card> bestHand =
-        // Possibly could be parallelStream() but this might be faster, because less mess of
-        // threads?
-        this.my_hand.stream()
+        this.my_hand.parallelStream()
             .map(discardAndAddDrawnCardMapper(drawn))
             .reduce(pickHandWithLeastDeadwood)
             .orElse(new ArrayList<Card>());
     // This should always have exactly one card
-    ArrayList<Card> rv = diffHands(bestHand, this.my_hand);
+    ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
     return rv.get(0);
   }
 
@@ -194,7 +180,7 @@ public class SiftAgent implements GinRummyPlayer {
 
   Function<? super Card, ArrayList<Card>> discardAndAddDrawnCardMapper(Card drawn) {
     return (discarded) -> {
-      return this.handDrawingAndDiscarding(drawn, discarded);
+      return this.handByDrawingAndDiscarding(drawn, discarded);
     };
   }
 
@@ -208,7 +194,7 @@ public class SiftAgent implements GinRummyPlayer {
     };
   }
 
-  ArrayList<Card> handDrawingAndDiscarding(Card drawn, Card discarded) {
+  ArrayList<Card> handByDrawingAndDiscarding(Card drawn, Card discarded) {
     ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);
     rv.remove(discarded);
     rv.add(drawn);
@@ -216,12 +202,16 @@ public class SiftAgent implements GinRummyPlayer {
   }
 
   static int deadwoodMinusMelds(ArrayList<Card> hand) {
-    return GinRummyUtil.getDeadwoodPoints(GinRummyUtil.cardsToBestMeldSets(hand).get(0), hand);
+    ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(hand);
+    if (bestMelds.isEmpty()) {
+      return GinRummyUtil.getDeadwoodPoints(hand);
+    }
+    return GinRummyUtil.getDeadwoodPoints(bestMelds.get(0), hand);
   }
 
-  static ArrayList<Card> diffHands(ArrayList<Card> a, ArrayList<Card> b) {
-    ArrayList<Card> rv = new ArrayList<Card>(a);
-    rv.removeAll(b);
+  static ArrayList<Card> fromHandSubtractHand(ArrayList<Card> from, ArrayList<Card> h) {
+    ArrayList<Card> rv = new ArrayList<Card>(from);
+    rv.removeAll(h);
     return rv;
   }
 }

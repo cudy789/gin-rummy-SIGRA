@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
 
+import siftagent.NaiveDeadwoodMinimizingAgent;
 import siftagent.SiftAgent;
 import ginrummy.StubbornSimpleGinRummyPlayer;
 
@@ -310,7 +311,7 @@ public class GinRummyGame {
 		// Single verbose demonstration game
 		setPlayVerbose(true);
 //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-		new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SimpleGinRummyPlayer()).play();
+		new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new NaiveDeadwoodMinimizingAgent()).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);

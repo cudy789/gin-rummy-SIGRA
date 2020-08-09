@@ -2,7 +2,6 @@ package siftagent;
 
 import ginrummy.Card;
 import java.util.ArrayList;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -97,9 +96,10 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     };
   }
 
-  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper = (drawn) -> {
-      return this.handByDrawingAndDiscarding(drawn, drawAndPickBestDiscard(drawn));
-    };
+  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper =
+      (drawn) -> {
+        return this.handByDrawingAndDiscarding(drawn, drawAndPickBestDiscard(drawn));
+      };
 
   ArrayList<Card> handByDrawingAndDiscarding(Card drawn, Card discarded) {
     ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);

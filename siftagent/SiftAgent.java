@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Stack;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public abstract class SiftAgent implements GinRummyPlayer {

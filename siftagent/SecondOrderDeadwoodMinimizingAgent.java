@@ -3,23 +3,30 @@ package siftagent;
 import ginrummy.Card;
 import ginrummy.GinRummyUtil;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
 
   // Optimal seems to be around 0.8 to 0.85
-  double REDUCTION_WEIGHT = 1.0;
+  double SECOND_ORDER_REDUCTION_WEIGHT = 1.0;
+  double OPPONENT_MELDS_REDUCTION_WEIGHT = 1.0;
 
   boolean REMOVE_CARDS_ALREADY_IN_MELDS = true;
   boolean TRY_TO_PREDICT_OPPONENT_MELDS = true;
 
-  public SecondOrderDeadwoodMinimizingAgent(double ReductionWeight) {
+  public SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
     super();
-    this.REDUCTION_WEIGHT = ReductionWeight;
+    this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
+    this.TRY_TO_PREDICT_OPPONENT_MELDS = false;
+  }
+
+  public SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight, double OppMeldsWeight) {
+    super();
+    this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
+    this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
+    this.OPPONENT_MELDS_REDUCTION_WEIGHT = OppMeldsWeight;
   }
 
   @Override
@@ -43,8 +50,6 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
       ArrayList<Card> hand, ArrayList<Card> unknowns) {
     ArrayList<ArrayList<Card>> initialMelds =
         flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(hand));
-    HashSet<ArrayList<Card>> oneAwayMelds = new HashSet<ArrayList<Card>>(unknowns.size());
-    HashSet<Card> newCardsInOneAwayMelds = new HashSet<Card>();
 
     Hashtable<Card, ArrayList<Card>> table = new Hashtable<Card, ArrayList<Card>>();
 
@@ -59,11 +64,6 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
               ArrayList<ArrayList<Card>> additionalMelds = flattenMeldSets(possibleMelds);
               additionalMelds.removeAll(initialMelds);
 
-              oneAwayMelds.addAll(additionalMelds);
-              if (!additionalMelds.isEmpty()) {
-                newCardsInOneAwayMelds.add(card);
-              }
-
               additionalMelds.forEach(
                   (meld) -> {
                     meld.stream()
@@ -73,7 +73,6 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                             })
                         .forEach(
                             (c) -> {
-                              // Track existing cards.
                               ArrayList<Card> value;
                               if (!table.containsKey(c)) {
                                 value = new ArrayList<Card>();
@@ -85,71 +84,18 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                             });
                   });
             });
-    // System.out.println(oneAwayMelds);
-    // System.out.println(newCardsInOneAwayMelds);
 
-    HashSet<Card> cardsInHandInOneAwayMelds = new HashSet<Card>();
-    oneAwayMelds.forEach(
-        (meld) -> {
-          cardsInHandInOneAwayMelds.addAll(meld);
-        });
-    // System.out.println(cardsInHandInOneAwayMelds);
-    // System.out.println(table);
     return table;
-  }
-
-  Function<ArrayList<Card>, Double> secondOrderApproximation(
-      ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
-    return (hand) -> {
-      int n = unknowns.size();
-      Hashtable<Card, ArrayList<Card>> table = meldsOneAway(initialHand, unknowns);
-      Double reduction =
-          table.entrySet().stream()
-              .collect(
-                  Collectors.reducing(
-                      0.0,
-                      (entry) -> {
-                        return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey())
-                            * ((double) entry.getValue().size() / (double) n);
-                      },
-                      (a, b) -> {
-                        return a + b;
-                      }));
-      return deadwoodMinusMelds(hand) - (this.REDUCTION_WEIGHT * reduction);
-    };
-  }
-
-  Function<ArrayList<Card>, Double> secondOrderApproximation2(
-      ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
-    return (hand) -> {
-      int n = unknowns.size();
-      Hashtable<Card, ArrayList<Card>> table = meldsOneAway(initialHand, unknowns);
-      ArrayList<Card> cardsInMeldsAlready = flattenMeldSet(getBestMeldsWrapper(initialHand));
-      Double reduction =
-          table.entrySet().stream()
-              .filter(
-                  (entry) -> {
-                    return !cardsInMeldsAlready.contains(entry.getKey());
-                  })
-              .collect(
-                  Collectors.reducing(
-                      0.0,
-                      (entry) -> {
-                        return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey())
-                            * ((double) entry.getValue().size() / (double) n);
-                      },
-                      (a, b) -> {
-                        return a + b;
-                      }));
-      return deadwoodMinusMelds(hand) - (this.REDUCTION_WEIGHT * reduction);
-    };
   }
 
   double valueHand(ArrayList<Card> hand, ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
     double value = deadwoodMinusMelds(hand);
-    value -= this.REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, initialHand, unknowns);
+    value -=
+        this.SECOND_ORDER_REDUCTION_WEIGHT
+            * approximateSecondOrderReduction(hand, initialHand, unknowns);
     if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
-      value -= approximateOpponentLayoffReduction(hand, unknowns);
+      value -=
+          this.OPPONENT_MELDS_REDUCTION_WEIGHT * approximateOpponentLayoffReduction(hand, unknowns);
     }
     return value;
   }
@@ -199,16 +145,16 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                 }));
   }
 
-  ArrayList<Card> cardsPossiblyInOpponentMelds(ArrayList<Card> unknowns) {
+  ArrayList<Card> cardsPossiblyInOpponentMelds(ArrayList<Card> hand) {
     ArrayList<Card> rv = new ArrayList<Card>();
 
     ArrayList<Card> cardsInOpponentsMelds =
         flattenMeldSet(getBestMeldsWrapper(this.opponent_hand_known));
 
-    Hashtable<Card, ArrayList<Card>> meldsOneAway =
-        meldsOneAway(this.opponent_hand_known, unknowns);
+    // Find cards in our hand of interest which we might be able to lay off on opponents melds.
+    Hashtable<Card, ArrayList<Card>> meldsWeCanMake = meldsOneAway(this.opponent_hand_known, hand);
     ArrayList<Card> cardsOneAway =
-        meldsOneAway.entrySet().stream()
+        meldsWeCanMake.entrySet().stream()
             .collect(
                 Collectors.reducing(
                     new ArrayList<Card>(),

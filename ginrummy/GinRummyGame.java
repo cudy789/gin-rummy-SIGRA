@@ -312,7 +312,7 @@ public class GinRummyGame {
 // 		// Single verbose demonstration game
 		setPlayVerbose(true);
 //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-		new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85)).play();
+		// new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85)).play();
 
 		// // Multiple non-verbose games 
 		// setPlayVerbose(false);
@@ -329,13 +329,11 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
-		GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85));
-		runSim(game);
-
-		// for (double w = 0.45; w < 1.5; w += 0.05) {
-		// 	GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(w));
-		// 	runSim(game);
-		// }
+		for (double w = 0.55; w < 1.2; w += 0.05) {
+			System.out.println(w);
+			GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85, w));
+			runSim(game);
+		}
 	}
 	
 
@@ -346,7 +344,7 @@ public class GinRummyGame {
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			int p = game.play();
-			System.out.printf("%d: %d\n", i, p);
+			// System.out.printf("%d: %d\n", i, p);
 			numP1Wins += p;
 		}
 		final long totalMs = System.currentTimeMillis() - startMs;

@@ -35,8 +35,7 @@ public class NaiveDeadwoodMinimizingAgent extends SiftAgent {
     // we pushed the faceup card onto the discard_pile in willDrawFaceUpCard
     if (discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
       // if the drawn card is the top of the discard, remove it. we'll add it to the
-      // appropriate
-      // hand later
+      // appropriate hand later
       discard_pile.pop();
     } else if (playerNum != my_number) {
       // it's not our turn and our opponent passed on the top card

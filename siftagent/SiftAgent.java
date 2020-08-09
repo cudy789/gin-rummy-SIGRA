@@ -6,6 +6,7 @@ import ginrummy.GinRummyUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Random;
 import java.util.Stack;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -158,14 +159,22 @@ public abstract class SiftAgent implements GinRummyPlayer {
   }
 
   Card drawAndPickBestDiscard(Card drawn, BinaryOperator<ArrayList<Card>> accumulator) {
+    ArrayList<Card> tmp = new ArrayList<Card>(this.my_hand);
+    tmp.add(drawn);
     ArrayList<Card> bestHand =
     // Actually faster to run this sequentially, otherwise it probably bogs down the thread pool.
-        this.my_hand.stream() // .parallel()
-            .map(discardAndAddDrawnCardMapper(drawn))
+        tmp.stream() // .parallel()
+            .map((c) -> {
+                ArrayList<Card> rv = new ArrayList<Card>(tmp);
+                rv.remove(c);
+                return rv;
+            })
             .reduce(pickHandWithLeastDeadwood)
-            .orElse(new ArrayList<Card>());
-    // This should always have exactly one card
+            .orElseThrow();
     ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
+    if (rv.isEmpty()) {
+        return drawn;
+    }
     return rv.get(0);
   }
 
@@ -193,17 +202,14 @@ public abstract class SiftAgent implements GinRummyPlayer {
   Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper(
       BinaryOperator<ArrayList<Card>> accumulator) {
     return (drawn) -> {
-      ArrayList<Card> x = new ArrayList<Card>(this.my_hand);
-      x.remove(drawAndPickBestDiscard(drawn, accumulator));
-      x.add(drawn);
-      return x;
+      return this.handByDrawingAndDiscarding(drawn, drawAndPickBestDiscard(drawn, accumulator));
     };
   }
 
   ArrayList<Card> handByDrawingAndDiscarding(Card drawn, Card discarded) {
     ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);
-    rv.remove(discarded);
     rv.add(drawn);
+    rv.remove(discarded);
     return rv;
   }
 

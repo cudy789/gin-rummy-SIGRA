@@ -309,9 +309,9 @@ public class GinRummyGame {
 	 */
 	public static void main(final String[] args) {
 		// Single verbose demonstration game
-// 		setPlayVerbose(true);
-// //		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
-// 		new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new NaiveDeadwoodMinimizingAgent()).play();
+		setPlayVerbose(true);
+//		new GinRummyGame(new SiftAgent(), new SimpleGinRummyPlayer()).play();
+		new GinRummyGame(new SimpleGinRummyPlayer(), new NaiveDeadwoodMinimizingAgent()).play();
 
 		// Multiple non-verbose games 
 		setPlayVerbose(false);

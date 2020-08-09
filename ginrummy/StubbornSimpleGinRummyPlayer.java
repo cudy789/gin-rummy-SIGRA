@@ -107,7 +107,12 @@ public class StubbornSimpleGinRummyPlayer implements GinRummyPlayer {
 				candidateCards.add(card);
 			}
 		}
-		Card discard = candidateCards.get(random.nextInt(candidateCards.size()));
+		Card discard;
+		if (candidateCards.size() > 0) {
+		 discard = candidateCards.get(random.nextInt(candidateCards.size()));
+		} else {
+			discard = cards.get(0);
+		}
 		// Prevent future repeat of draw, discard pair.
 		ArrayList<Card> drawDiscard = new ArrayList<Card>();
 		drawDiscard.add(drawnCard);

@@ -10,7 +10,6 @@ import java.util.stream.IntStream;
 import siftagent.NaiveDeadwoodMinimizingAgent;
 import siftagent.SecondOrderDeadwoodMinimizingAgent;
 import siftagent.SiftAgent;
-import siftagent.Tuple;
 import ginrummy.StubbornSimpleGinRummyPlayer;
 
 /**
@@ -332,7 +331,7 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
-		GinRummyGame game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(0.85), new SecondOrderDeadwoodMinimizingAgent(0.85, 0.4));
+		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent(0.85));
 		double pct = runSim(game);
 		System.out.println(pct);
 
@@ -349,7 +348,7 @@ public class GinRummyGame {
 	// Returns **Player One** win Percent
 	static double runSim(GinRummyGame game) {
 		setPlayVerbose(false);
-		final int numGames = 100;
+		final int numGames = 50;
 		int numP1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {

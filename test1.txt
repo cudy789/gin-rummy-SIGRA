@@ -1,0 +1,22 @@
+0.55
+100 games played in 264557 ms.
+Games Won: P0:45, P1:55.
+0.6000000000000001
+100 games played in 245152 ms.
+Games Won: P0:45, P1:55.
+0.6500000000000001
+100 games played in 233958 ms.
+Games Won: P0:48, P1:52.
+0.7000000000000002
+100 games played in 237154 ms.
+Games Won: P0:46, P1:54.
+0.7500000000000002
+100 games played in 282868 ms.
+Games Won: P0:47, P1:53.
+0.8000000000000003
+100 games played in 265745 ms.
+Games Won: P0:56, P1:44.
+0.8500000000000003
+100 games played in 279808 ms.
+Games Won: P0:45, P1:55.
+0.9000000000000004

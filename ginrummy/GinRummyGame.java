@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Stack;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 import siftagent.NaiveDeadwoodMinimizingAgent;
 import siftagent.SecondOrderDeadwoodMinimizingAgent;
 import siftagent.SiftAgent;
+import siftagent.Tuple;
 import ginrummy.StubbornSimpleGinRummyPlayer;
 
 /**
@@ -329,15 +332,22 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
-		for (double w = 0.55; w < 1.2; w += 0.05) {
-			System.out.println(w);
-			GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85, w));
-			runSim(game);
-		}
+		GinRummyGame game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(0.85), new SecondOrderDeadwoodMinimizingAgent(0.85, 0.4));
+		double pct = runSim(game);
+		System.out.println(pct);
+
+		// DoubleStream stream = DoubleStream.iterate(0.0, (x) -> { return x + 0.05; }).parallel().limit(23);
+		// DoubleStream results = stream.map((w) -> {
+		// 	GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(0.85, w));
+		// 	double pct = runSim(game);
+		// 	System.out.printf("Weight: %f    Player One Win Percent: %f\n", w, pct);
+		// 	return pct;
+		// });
+		// System.out.println(results.summaryStatistics());
 	}
 	
-
-	static void runSim(GinRummyGame game) {
+	// Returns **Player One** win Percent
+	static double runSim(GinRummyGame game) {
 		setPlayVerbose(false);
 		final int numGames = 100;
 		int numP1Wins = 0;
@@ -348,7 +358,8 @@ public class GinRummyGame {
 			numP1Wins += p;
 		}
 		final long totalMs = System.currentTimeMillis() - startMs;
-		System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
-		System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
+		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
+		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
+		return (double) numP1Wins / (double) numGames;
 	}
 }

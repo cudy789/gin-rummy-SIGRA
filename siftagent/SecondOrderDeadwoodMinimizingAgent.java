@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
 
@@ -46,7 +47,36 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return super.willDrawFaceUpCard(card);
   }
 
-  static Hashtable<Card, ArrayList<Card>> meldsOneAway(
+  static ArrayList<ArrayList<Card>> meldsOneAway(ArrayList<Card> hand, ArrayList<Card> unknowns) {
+    ArrayList<ArrayList<Card>> initialMelds =
+        flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(hand));
+    return unknowns.stream()
+        .map(
+            (card) -> {
+              ArrayList<Card> tmp = new ArrayList<Card>(hand);
+              tmp.add(card);
+              ArrayList<ArrayList<ArrayList<Card>>> possibleMelds =
+                  GinRummyUtil.cardsToBestMeldSets(tmp);
+
+              ArrayList<ArrayList<Card>> additionalMelds = flattenMeldSets(possibleMelds);
+              additionalMelds.removeAll(initialMelds);
+              return additionalMelds;
+            })
+        .collect(
+            Collectors.reducing(
+                new ArrayList<ArrayList<Card>>(),
+                (x) -> {
+                  return x;
+                },
+                (a, b) -> {
+                  ArrayList<ArrayList<Card>> rv = new ArrayList<ArrayList<Card>>();
+                  rv.addAll(a);
+                  rv.addAll(b);
+                  return rv;
+                }));
+  }
+
+  static Hashtable<Card, ArrayList<Card>> meldsOneAwayTable(
       ArrayList<Card> hand, ArrayList<Card> unknowns) {
     ArrayList<ArrayList<Card>> initialMelds =
         flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(hand));
@@ -103,7 +133,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   double approximateSecondOrderReduction(
       ArrayList<Card> hand, ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
     int n = unknowns.size();
-    Hashtable<Card, ArrayList<Card>> table = meldsOneAway(initialHand, unknowns);
+    Hashtable<Card, ArrayList<Card>> table = meldsOneAwayTable(initialHand, unknowns);
     ArrayList<Card> cardsInMeldsAlready = flattenMeldSet(getBestMeldsWrapper(initialHand));
     return table.entrySet().stream()
         .filter(
@@ -122,6 +152,44 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                   return a + b;
                 }));
   }
+
+  double approximateOpponentLayoffReduction2(ArrayList<Card> hand, ArrayList<Card> unknowns) {
+    if (this.opponent_hand_known.isEmpty()) {
+      // We know noting.
+      return 0.0;
+    }
+    return meldsOneAway(hand, unknowns).stream()
+        .map(
+            (meld) -> {
+              return meld.stream()
+                  .filter(
+                      (x) -> {
+                        return hand.contains(x);
+                      })
+                  .findFirst()
+                  .orElseThrow();
+            })
+        .collect(
+            Collectors.reducing(
+                0.0,
+                (x) -> {
+                  return (double) GinRummyUtil.getDeadwoodPoints(x);
+                },
+                (a, b) -> {
+                  return a + b;
+                }));
+  }
+
+//   ArrayList<Card> allPossibleMeldsInAllPossibleHands(ArrayList<Card> cards) {
+//     if (cards.size() < this.HAND_SIZE) {
+//         return null;
+//     }
+
+//     ArrayList<Card> hand = new ArrayList<Card>(this.HAND_SIZE);
+//     IntStream.range(0, this.HAND_SIZE).forEach((i) -> {
+        
+//     });
+//   }
 
   double approximateOpponentLayoffReduction(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     if (this.opponent_hand_known.isEmpty()) {
@@ -152,7 +220,8 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
         flattenMeldSet(getBestMeldsWrapper(this.opponent_hand_known));
 
     // Find cards in our hand of interest which we might be able to lay off on opponents melds.
-    Hashtable<Card, ArrayList<Card>> meldsWeCanMake = meldsOneAway(this.opponent_hand_known, hand);
+    Hashtable<Card, ArrayList<Card>> meldsWeCanMake =
+        meldsOneAwayTable(this.opponent_hand_known, hand);
     ArrayList<Card> cardsOneAway =
         meldsWeCanMake.entrySet().stream()
             .collect(

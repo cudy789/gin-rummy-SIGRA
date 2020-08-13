@@ -171,7 +171,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                         return hand.contains(x);
                       })
                   .findFirst()
-                  .orElseThrow();
+                  .orElseThrow(null);
             })
         .collect(
             Collectors.reducing(

@@ -66,17 +66,17 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     ArrayList<Card> tmp = new ArrayList<Card>(this.my_hand);
     tmp.add(drawn);
     ArrayList<Card> bestHand =
-        // Actually faster to run this sequentially, otherwise it probably bogs down the thread
-        // pool.
-        tmp.stream() // .parallel()
-            .map(
-                (c) -> {
-                  ArrayList<Card> rv = new ArrayList<Card>(tmp);
-                  rv.remove(c);
-                  return rv;
-                })
-            .reduce(this.accumulator(this.unknownCardsMinus(drawn)))
-            .orElseThrow();
+	// Actually faster to run this sequentially, otherwise it probably bogs down the thread
+	// pool.
+	tmp.stream() // .parallel()
+	.map(
+	     (c) -> {
+		 ArrayList<Card> rv = new ArrayList<Card>(tmp);
+		 rv.remove(c);
+		 return rv;
+	     })
+	.reduce(this.accumulator(this.unknownCardsMinus(drawn)))
+	.orElseThrow(null);
     ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
     if (rv.isEmpty()) {
       return drawn;

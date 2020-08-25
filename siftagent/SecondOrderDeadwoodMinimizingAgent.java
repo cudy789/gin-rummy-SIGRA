@@ -20,13 +20,13 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     super();
   }
 
-  private SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
+  protected SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.TRY_TO_PREDICT_OPPONENT_MELDS = false;
   }
 
-  private SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight, double OppMeldsWeight) {
+  protected SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight, double OppMeldsWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
@@ -36,14 +36,22 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   @Override
   public Function<ArrayList<Card>, Double> evaluator(ArrayList<Card> unknowns) {
     return (hand) -> {
-      return (double) valueHand(hand, this.my_hand, unknowns);
+      return (double) valueHand(hand, unknowns);
     };
   }
 
-  @Override
-  public boolean willDrawFaceUpCard(Card card) {
-    meldsOneAway(this.my_hand, this.unknownCards());
-    return super.willDrawFaceUpCard(card);
+  // Compute the score for a given hand.
+  double valueHand(ArrayList<Card> hand, ArrayList<Card> unknowns) {
+    double value = deadwoodMinusMelds(hand);
+
+    value -= this.SECOND_ORDER_REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, unknowns);
+
+    // Enabled only for opponent modeling
+    if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
+      value -=
+          this.OPPONENT_MELDS_REDUCTION_WEIGHT * approximateOpponentLayoffReduction(hand, unknowns);
+    }
+    return value;
   }
 
   static ArrayList<ArrayList<Card>> meldsOneAway(ArrayList<Card> hand, ArrayList<Card> unknowns) {
@@ -89,7 +97,6 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     unknowns.stream()
         .forEach(
             (card) -> {
-              //
               ArrayList<Card> tmp = new ArrayList<Card>(hand);
               tmp.add(card);
 
@@ -127,66 +134,21 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return table;
   }
 
-  // Compute the score for a given hand.
-  double valueHand(ArrayList<Card> hand, ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
-    double value = deadwoodMinusMelds(hand);
-
-    value -=
-        this.SECOND_ORDER_REDUCTION_WEIGHT
-            * approximateSecondOrderReduction(hand, initialHand, unknowns);
-
-    // Enabled only for opponent modeling
-    if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
-      value -=
-          this.OPPONENT_MELDS_REDUCTION_WEIGHT * approximateOpponentLayoffReduction(hand, unknowns);
-    }
-    return value;
-  }
-
-  double approximateSecondOrderReduction(
-      ArrayList<Card> hand, ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
-    int n = unknowns.size();
-    Hashtable<Card, ArrayList<Card>> table = meldsOneAwayTable(initialHand, unknowns);
-    ArrayList<Card> cardsInMeldsAlready = flattenMeldSet(getBestMeldsWrapper(initialHand));
+  double approximateSecondOrderReduction(ArrayList<Card> hand, ArrayList<Card> unknowns) {
+    Hashtable<Card, ArrayList<Card>> table = meldsOneAwayTable(hand, unknowns);
+    ArrayList<Card> cardsAlreadyInMelds = flattenMeldSet(getBestMeldsWrapper(hand));
     return table.entrySet().stream()
         .filter(
             (entry) -> {
-              return this.REMOVE_CARDS_ALREADY_IN_MELDS
-                  && !cardsInMeldsAlready.contains(entry.getKey());
+              return !(this.REMOVE_CARDS_ALREADY_IN_MELDS && cardsAlreadyInMelds.contains(entry.getKey()));
             })
         .collect(
             Collectors.reducing(
                 0.0,
                 (entry) -> {
+                  // Weight of the deadwood times the probability that we draw a card which makes it into a meld.
                   return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey())
-                      * ((double) entry.getValue().size() / (double) n);
-                },
-                (a, b) -> {
-                  return a + b;
-                }));
-  }
-
-  double approximateOpponentLayoffReduction2(ArrayList<Card> hand, ArrayList<Card> unknowns) {
-    if (this.opponent_hand_known.isEmpty()) {
-      // We know noting.
-      return 0.0;
-    }
-    return meldsOneAway(hand, unknowns).stream()
-        .map(
-            (meld) -> {
-              return meld.stream()
-                  .filter(
-                      (x) -> {
-                        return hand.contains(x);
-                      })
-                  .findFirst()
-                  .orElseThrow(null);
-            })
-        .collect(
-            Collectors.reducing(
-                0.0,
-                (x) -> {
-                  return (double) GinRummyUtil.getDeadwoodPoints(x);
+                      * ((double) entry.getValue().size() / (double) unknowns.size());
                 },
                 (a, b) -> {
                   return a + b;

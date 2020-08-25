@@ -192,7 +192,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
         .orElse(0);
   }
 
-  ArrayList<ArrayList<Card>> getBestMeldsWrapper(ArrayList<Card> cards) {
+  static ArrayList<ArrayList<Card>> getBestMeldsWrapper(ArrayList<Card> cards) {
     ArrayList<ArrayList<ArrayList<Card>>> rv = GinRummyUtil.cardsToBestMeldSets(cards);
     if (rv.isEmpty()) {
       return new ArrayList<ArrayList<Card>>();
@@ -200,7 +200,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
     return rv.get(0);
   }
 
-  ArrayList<Card> flattenMeldSet(ArrayList<ArrayList<Card>> melds) {
+  static ArrayList<Card> flattenMeldSet(ArrayList<ArrayList<Card>> melds) {
     return melds.stream()
         .collect(
             Collectors.reducing(
@@ -228,13 +228,14 @@ public abstract class SiftAgent implements GinRummyPlayer {
 
   boolean willCardMakeOrJoinMeldInHand(Card card) {
     ArrayList<Card> newHand = new ArrayList<Card>(this.my_hand);
+    newHand.add(card);
     ArrayList<ArrayList<ArrayList<Card>>> a = GinRummyUtil.cardsToBestMeldSets(newHand);
     ArrayList<ArrayList<ArrayList<Card>>> b = GinRummyUtil.cardsToBestMeldSets(this.my_hand);
-    if (a.isEmpty() && !b.isEmpty()) {
+    if (!a.isEmpty() && b.isEmpty()) {
       return true;
     } else if (a.isEmpty() && b.isEmpty()) {
       return false;
-    } else if (!a.isEmpty() && b.isEmpty()) {
+    } else if (a.isEmpty() && !b.isEmpty()) {
       System.out.println("Shouldn't get here???");
       return false;
     } else {

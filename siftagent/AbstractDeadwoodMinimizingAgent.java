@@ -4,7 +4,7 @@ import ginrummy.Card;
 import java.util.ArrayList;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.function.ToIntFunction;
+import java.util.function.ToDoubleFunction;
 
 public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     implements DeadwoodMinimizingAgent {
@@ -29,20 +29,23 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     }
 
     // Expected value of drawing from unknown cards
-    double averageUnknowns = computeExpectedDeadwoodOfUnknowns();
+    double expectedValueOfUnknowns =
+        computeExpectedValueOfUnknowns(this.my_hand, this.unknownCards());
 
     // Compute value of hand after drawing face up card, given that we picked the best discard.
-    Card cardToDiscardIfFaceUpPicked = drawAndPickBestDiscard(card);
+    Card cardToDiscardIfFaceUpPicked =
+        drawAndPickBestDiscard(this.my_hand, card, this.unknownCards());
     ArrayList<Card> handAfterPickingFaceUpCard =
-        this.handByDrawingAndDiscarding(card, cardToDiscardIfFaceUpPicked);
+        handByDrawingAndDiscarding(this.my_hand, card, cardToDiscardIfFaceUpPicked);
+    double valueOfBestHandAfterDrawningFaceUpCard =
+        this.evaluator(this.unknownCards()).apply(handAfterPickingFaceUpCard);
 
     // If true, pick up Face Up card.
-    if (deadwoodMinusMelds(handAfterPickingFaceUpCard) < averageUnknowns) {
+    if (valueOfBestHandAfterDrawningFaceUpCard < expectedValueOfUnknowns) {
       return true;
     } else {
       // We will draw the random card. Add the Face Up card to our copy of the discard
-      // pile, neither
-      // player will see it again.
+      // pile, neither player will see it again.
       discard_pile.push(card);
       return false;
     }
@@ -52,37 +55,44 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
   public void reportDraw(int playerNum, Card drawnCard) {
     // we pushed the faceup card onto the discard_pile in willDrawFaceUpCard
     if (discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
-      // if the drawn card is the top of the discard, remove it. we'll add it to the
-      // appropriate hand later
+      // if the drawn card is the top of the discard, remove it from the discard pile.
+      // we'll add it to the appropriate hand later.
       discard_pile.pop();
     } else if (playerNum != my_number) {
       // it's not our turn and our opponent passed on the top card
       opponent_passed.add(drawnCard);
     }
+
     if (playerNum == my_number) {
-      cardToDiscard = drawAndPickBestDiscard(drawnCard);
-      my_hand = this.handByDrawingAndDiscarding(drawnCard, cardToDiscard);
+      cardToDiscard = drawAndPickBestDiscard(this.my_hand, drawnCard, this.unknownCards());
+      my_hand = handByDrawingAndDiscarding(this.my_hand, drawnCard, cardToDiscard);
     } else if (drawnCard != null) {
       opponent_hand_known.add(drawnCard);
     }
   }
 
-  double computeExpectedDeadwoodOfUnknowns() {
+  // Iterates over each possible hand, given a paricular unknown card, and determines the hand with
+  // the best (least) value, according to 'evaluator'.
+  // Then takes the expectation value of the best hand for all cards in unknowns.
+  double computeExpectedValueOfUnknowns(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     // For each possible card we could draw, figure out the best way we could discard.
-    return unknownCards().stream()
+    return unknowns.stream()
         .parallel()
-        .map(drawAndPickBestDiscardMapper)
-        .mapToInt(computeDeadwoodOfHandMapper)
+        .map(drawAndPickBestDiscardMapper(hand, unknowns))
+        .mapToDouble(evaluateHandMapper(unknowns))
         .average()
         .orElse(Double.MAX_VALUE);
   }
 
-  // Try every way of discarding, and return the best choice given the result of 'accumulator'.
-  Card drawAndPickBestDiscard(Card drawn) {
-    ArrayList<Card> tmp = new ArrayList<Card>(this.my_hand);
+  // Try every way of discarding, and return the best choice given the result of 'evaluator'.
+  Card drawAndPickBestDiscard(ArrayList<Card> hand, Card drawn, ArrayList<Card> unknowns) {
+    ArrayList<Card> tmp = new ArrayList<Card>(hand);
     tmp.add(drawn);
 
-    // Compute best hand, over all possible hands. Uses 'accumulator' to determine the best hand.
+    ArrayList<Card> unknownsMinusDrawn = new ArrayList<Card>(unknowns);
+    unknownsMinusDrawn.remove(drawn);
+
+    // Compute best hand, over all possible hands. Uses 'evaluator' to determine the best hand.
     ArrayList<Card> bestHand =
         // Actually faster to run this sequentially, otherwise it probably bogs down the thread
         // pool.
@@ -93,10 +103,10 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
                   rv.remove(c);
                   return rv;
                 })
-            .reduce(this.accumulator(this.unknownCardsMinus(drawn)))
+            .reduce(this.accumulator(unknownsMinusDrawn))
             .orElseThrow(null);
 
-    ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
+    ArrayList<Card> rv = fromHandSubtractHand(hand, bestHand);
     if (rv.isEmpty()) {
       return drawn;
     }
@@ -104,26 +114,34 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
   }
 
   // Maps an ArrayList<Card> to its DeadwoodMinusMelds
-  ToIntFunction<? super ArrayList<Card>> computeDeadwoodOfHandMapper =
-      (x) -> {
-        return deadwoodMinusMelds(x);
-      };
-
-  Function<? super Card, ArrayList<Card>> discardAndAddDrawnCardMapper(Card drawn) {
-    return (discarded) -> {
-      return this.handByDrawingAndDiscarding(drawn, discarded);
+  ToDoubleFunction<? super ArrayList<Card>> evaluateHandMapper(ArrayList<Card> unknowns) {
+    return (x) -> {
+      return this.evaluator(unknowns).apply(x);
     };
   }
 
-  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper =
-      (drawn) -> {
-        return this.handByDrawingAndDiscarding(drawn, drawAndPickBestDiscard(drawn));
-      };
+  Function<? super Card, ArrayList<Card>> drawAndPickBestDiscardMapper(
+      ArrayList<Card> hand, ArrayList<Card> unknowns) {
+    return (drawn) -> {
+      return handByDrawingAndDiscarding(
+          hand, drawn, this.drawAndPickBestDiscard(hand, drawn, unknowns));
+    };
+  }
 
-  ArrayList<Card> handByDrawingAndDiscarding(Card drawn, Card discarded) {
-    ArrayList<Card> rv = new ArrayList<Card>(this.my_hand);
+  // Returns a copy of hand, swapping discarded with drawn.
+  static ArrayList<Card> handByDrawingAndDiscarding(
+      ArrayList<Card> hand, Card drawn, Card discarded) {
+    ArrayList<Card> rv = new ArrayList<Card>(hand);
     rv.add(drawn);
     rv.remove(discarded);
     return rv;
+  }
+
+  // Mapper for above function. Mapper takes discarded card as argument.
+  static Function<? super Card, ArrayList<Card>> discardAndAddDrawnCardMapper(
+      ArrayList<Card> hand, Card drawn) {
+    return (discarded) -> {
+      return handByDrawingAndDiscarding(hand, drawn, discarded);
+    };
   }
 }

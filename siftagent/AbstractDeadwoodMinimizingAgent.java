@@ -2,11 +2,24 @@ package siftagent;
 
 import ginrummy.Card;
 import java.util.ArrayList;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     implements DeadwoodMinimizingAgent {
+
+  public BinaryOperator<ArrayList<Card>> accumulator(ArrayList<Card> unknowns) {
+    Function<ArrayList<Card>, Double> evaluator = this.evaluator(unknowns);
+    return (a, b) -> {
+      if (evaluator.apply(a) < evaluator.apply(b)) {
+        return a;
+      } else {
+        return b;
+      }
+    };
+  }
+
   @Override
   // We will not set the new hand here. Do that in reportDraw.
   public boolean willDrawFaceUpCard(Card card) {
@@ -15,7 +28,10 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
       return true;
     }
 
+    // Expected value of drawing from unknown cards
     double averageUnknowns = computeExpectedDeadwoodOfUnknowns();
+
+    // Compute value of hand after drawing face up card, given that we picked the best discard.
     Card cardToDiscardIfFaceUpPicked = drawAndPickBestDiscard(card);
     ArrayList<Card> handAfterPickingFaceUpCard =
         this.handByDrawingAndDiscarding(card, cardToDiscardIfFaceUpPicked);
@@ -65,18 +81,21 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
   Card drawAndPickBestDiscard(Card drawn) {
     ArrayList<Card> tmp = new ArrayList<Card>(this.my_hand);
     tmp.add(drawn);
+
+    // Compute best hand, over all possible hands. Uses 'accumulator' to determine the best hand.
     ArrayList<Card> bestHand =
-	// Actually faster to run this sequentially, otherwise it probably bogs down the thread
-	// pool.
-	tmp.stream() // .parallel()
-	.map(
-	     (c) -> {
-		 ArrayList<Card> rv = new ArrayList<Card>(tmp);
-		 rv.remove(c);
-		 return rv;
-	     })
-	.reduce(this.accumulator(this.unknownCardsMinus(drawn)))
-	.orElseThrow(null);
+        // Actually faster to run this sequentially, otherwise it probably bogs down the thread
+        // pool.
+        tmp.stream() // .parallel()
+            .map(
+                (c) -> {
+                  ArrayList<Card> rv = new ArrayList<Card>(tmp);
+                  rv.remove(c);
+                  return rv;
+                })
+            .reduce(this.accumulator(this.unknownCardsMinus(drawn)))
+            .orElseThrow(null);
+
     ArrayList<Card> rv = fromHandSubtractHand(this.my_hand, bestHand);
     if (rv.isEmpty()) {
       return drawn;

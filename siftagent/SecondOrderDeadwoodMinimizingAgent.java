@@ -4,9 +4,8 @@ import ginrummy.Card;
 import ginrummy.GinRummyUtil;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
 
@@ -17,9 +16,9 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   boolean REMOVE_CARDS_ALREADY_IN_MELDS = true;
   boolean TRY_TO_PREDICT_OPPONENT_MELDS = false;
 
-    public SecondOrderDeadwoodMinimizingAgent() {
-        super();
-    }
+  public SecondOrderDeadwoodMinimizingAgent() {
+    super();
+  }
 
   private SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
     super();
@@ -35,13 +34,9 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   }
 
   @Override
-  public BinaryOperator<ArrayList<Card>> accumulator(ArrayList<Card> unknowns) {
-    return (a, b) -> {
-      if (valueHand(a, this.my_hand, unknowns) < valueHand(b, this.my_hand, unknowns)) {
-        return a;
-      } else {
-        return b;
-      }
+  public Function<ArrayList<Card>, Double> evaluator(ArrayList<Card> unknowns) {
+    return (hand) -> {
+      return (double) valueHand(hand, this.my_hand, unknowns);
     };
   }
 
@@ -80,6 +75,10 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                 }));
   }
 
+  // Hashtable:
+  // - Key: Card in our hand
+  // - Value: Set of cards which when added to our hand, would produce a meld which contains the key
+  // card.
   static Hashtable<Card, ArrayList<Card>> meldsOneAwayTable(
       ArrayList<Card> hand, ArrayList<Card> unknowns) {
     ArrayList<ArrayList<Card>> initialMelds =
@@ -90,14 +89,18 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     unknowns.stream()
         .forEach(
             (card) -> {
+              //
               ArrayList<Card> tmp = new ArrayList<Card>(hand);
               tmp.add(card);
+
               ArrayList<ArrayList<ArrayList<Card>>> possibleMelds =
                   GinRummyUtil.cardsToBestMeldSets(tmp);
 
               ArrayList<ArrayList<Card>> additionalMelds = flattenMeldSets(possibleMelds);
               additionalMelds.removeAll(initialMelds);
 
+              // additionalMelds is the set of melds which we were able to create due to the
+              // addition of the 11th card.
               additionalMelds.forEach(
                   (meld) -> {
                     meld.stream()
@@ -108,11 +111,13 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                         .forEach(
                             (c) -> {
                               ArrayList<Card> value;
+
                               if (!table.containsKey(c)) {
                                 value = new ArrayList<Card>();
                               } else {
                                 value = table.get(c);
                               }
+
                               value.add(card);
                               table.put(c, value);
                             });
@@ -122,11 +127,15 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return table;
   }
 
+  // Compute the score for a given hand.
   double valueHand(ArrayList<Card> hand, ArrayList<Card> initialHand, ArrayList<Card> unknowns) {
     double value = deadwoodMinusMelds(hand);
+
     value -=
         this.SECOND_ORDER_REDUCTION_WEIGHT
             * approximateSecondOrderReduction(hand, initialHand, unknowns);
+
+    // Enabled only for opponent modeling
     if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
       value -=
           this.OPPONENT_MELDS_REDUCTION_WEIGHT * approximateOpponentLayoffReduction(hand, unknowns);

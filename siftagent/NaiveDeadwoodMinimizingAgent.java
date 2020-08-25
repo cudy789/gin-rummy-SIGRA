@@ -2,21 +2,14 @@ package siftagent;
 
 import ginrummy.Card;
 import java.util.ArrayList;
-import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 public class NaiveDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizingAgent {
 
   @Override
-  public BinaryOperator<ArrayList<Card>> accumulator(ArrayList<Card> unknowns) {
-    return pickHandWithLeastDeadwood;
+  public Function<ArrayList<Card>, Double> evaluator(ArrayList<Card> unknowns) {
+    return (hand) -> {
+      return (double) deadwoodMinusMelds(hand);
+    };
   }
-
-  BinaryOperator<ArrayList<Card>> pickHandWithLeastDeadwood =
-      (a, b) -> {
-        if (deadwoodMinusMelds(a) < deadwoodMinusMelds(b)) {
-          return a;
-        } else {
-          return b;
-        }
-      };
 }

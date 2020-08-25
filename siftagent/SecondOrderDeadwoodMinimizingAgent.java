@@ -55,16 +55,14 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   }
 
   static ArrayList<ArrayList<Card>> meldsOneAway(ArrayList<Card> hand, ArrayList<Card> unknowns) {
-    ArrayList<ArrayList<Card>> initialMelds =
-        flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(hand));
+    ArrayList<ArrayList<Card>> initialMelds = GinRummyUtil.cardsToAllMelds(hand);
     return unknowns.stream()
         .map(
             (card) -> {
               ArrayList<Card> tmp = new ArrayList<Card>(hand);
               tmp.add(card);
 
-              ArrayList<ArrayList<Card>> additionalMelds =
-                  flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(tmp));
+              ArrayList<ArrayList<Card>> additionalMelds = GinRummyUtil.cardsToAllMelds(tmp);
               additionalMelds.removeAll(initialMelds);
               return additionalMelds;
             })
@@ -88,13 +86,9 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   // card.
   static Hashtable<Card, ArrayList<Card>> meldsOneAwayTable(
       ArrayList<Card> hand, ArrayList<Card> unknowns) {
-    ArrayList<ArrayList<Card>> initialMelds =
-        flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(hand));
-
     Hashtable<Card, ArrayList<Card>> table = new Hashtable<Card, ArrayList<Card>>();
 
-    ArrayList<ArrayList<Card>> meldsOneAway = meldsOneAway(hand, unknowns);
-    meldsOneAway.stream()
+    meldsOneAway(hand, unknowns).stream()
         .forEach(
             (meld) -> {
               // Determine which card was added to create this meld.

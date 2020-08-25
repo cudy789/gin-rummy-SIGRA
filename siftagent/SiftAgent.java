@@ -226,20 +226,20 @@ public abstract class SiftAgent implements GinRummyPlayer {
     return rv;
   }
 
-  boolean willCardMakeOrJoinMeldInHand(Card card) {
-    ArrayList<Card> newHand = new ArrayList<Card>(this.my_hand);
+  static boolean willCardMakeOrJoinMeldInHand(ArrayList<Card> hand, Card card) {
+    ArrayList<Card> newHand = new ArrayList<Card>(hand);
     newHand.add(card);
-    ArrayList<ArrayList<ArrayList<Card>>> a = GinRummyUtil.cardsToBestMeldSets(newHand);
-    ArrayList<ArrayList<ArrayList<Card>>> b = GinRummyUtil.cardsToBestMeldSets(this.my_hand);
-    if (!a.isEmpty() && b.isEmpty()) {
+    ArrayList<ArrayList<ArrayList<Card>>> n = GinRummyUtil.cardsToBestMeldSets(newHand);
+    ArrayList<ArrayList<ArrayList<Card>>> o = GinRummyUtil.cardsToBestMeldSets(hand);
+    if (!n.isEmpty() && o.isEmpty()) {
       return true;
-    } else if (a.isEmpty() && b.isEmpty()) {
+    } else if (n.isEmpty() && o.isEmpty()) {
       return false;
-    } else if (a.isEmpty() && !b.isEmpty()) {
+    } else if (n.isEmpty() && !o.isEmpty()) {
       System.out.println("Shouldn't get here???");
       return false;
     } else {
-      return cardsInMelds(a.get(0)) > cardsInMelds(b.get(0));
+      return cardsInMelds(n.get(0)) > cardsInMelds(o.get(0));
     }
   }
 }

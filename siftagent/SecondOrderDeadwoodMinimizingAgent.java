@@ -20,7 +20,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     super();
   }
 
-  protected SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
+  public SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.TRY_TO_PREDICT_OPPONENT_MELDS = false;
@@ -62,10 +62,9 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
             (card) -> {
               ArrayList<Card> tmp = new ArrayList<Card>(hand);
               tmp.add(card);
-              ArrayList<ArrayList<ArrayList<Card>>> possibleMelds =
-                  GinRummyUtil.cardsToBestMeldSets(tmp);
 
-              ArrayList<ArrayList<Card>> additionalMelds = flattenMeldSets(possibleMelds);
+              ArrayList<ArrayList<Card>> additionalMelds =
+                  flattenMeldSets(GinRummyUtil.cardsToBestMeldSets(tmp));
               additionalMelds.removeAll(initialMelds);
               return additionalMelds;
             })
@@ -94,43 +93,41 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
 
     Hashtable<Card, ArrayList<Card>> table = new Hashtable<Card, ArrayList<Card>>();
 
-    unknowns.stream()
+    ArrayList<ArrayList<Card>> meldsOneAway = meldsOneAway(hand, unknowns);
+    meldsOneAway.stream()
         .forEach(
-            (card) -> {
-              ArrayList<Card> tmp = new ArrayList<Card>(hand);
-              tmp.add(card);
+            (meld) -> {
+              // Determine which card was added to create this meld.
+              ArrayList<Card> possibles = new ArrayList<Card>(meld);
+              possibles.removeAll(hand);
+              if (possibles.size() != 1) {
+                System.out.println(possibles.size());
+                System.exit(1);
+              }
+              Card addedCard = possibles.get(0);
 
-              ArrayList<ArrayList<ArrayList<Card>>> possibleMelds =
-                  GinRummyUtil.cardsToBestMeldSets(tmp);
+              // Now do bookkeeping for cards that are in our hand, which will be in a meld if
+              // `addedCard` is drawn.
+              meld.stream()
+                  .filter(
+                      (card) -> {
+                        return hand.contains(card);
+                      })
+                  .forEach(
+                      (card) -> {
 
-              ArrayList<ArrayList<Card>> additionalMelds = flattenMeldSets(possibleMelds);
-              additionalMelds.removeAll(initialMelds);
-
-              // additionalMelds is the set of melds which we were able to create due to the
-              // addition of the 11th card.
-              additionalMelds.forEach(
-                  (meld) -> {
-                    meld.stream()
-                        .filter(
-                            (c) -> {
-                              return hand.contains(c);
-                            })
-                        .forEach(
-                            (c) -> {
-                              ArrayList<Card> value;
-
-                              if (!table.containsKey(c)) {
-                                value = new ArrayList<Card>();
-                              } else {
-                                value = table.get(c);
-                              }
-
-                              value.add(card);
-                              table.put(c, value);
-                            });
-                  });
+                        // Get possibly exant value from hashtable, otherwise create new array.
+                        ArrayList<Card> value;
+                        if (!table.containsKey(card)) {
+                          value = new ArrayList<Card>();
+                        } else {
+                          value = table.get(card);
+                        }
+                        // Then insert `addedCard` to array, and put array back into table.
+                        value.add(addedCard);
+                        table.put(card, value);
+                      });
             });
-
     return table;
   }
 
@@ -140,13 +137,15 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return table.entrySet().stream()
         .filter(
             (entry) -> {
-              return !(this.REMOVE_CARDS_ALREADY_IN_MELDS && cardsAlreadyInMelds.contains(entry.getKey()));
+              return !(this.REMOVE_CARDS_ALREADY_IN_MELDS
+                  && cardsAlreadyInMelds.contains(entry.getKey()));
             })
         .collect(
             Collectors.reducing(
                 0.0,
                 (entry) -> {
-                  // Weight of the deadwood times the probability that we draw a card which makes it into a meld.
+                  // Weight of the deadwood times the probability that we draw a card which makes it
+                  // into a meld.
                   return (double) GinRummyUtil.getDeadwoodPoints(entry.getKey())
                       * ((double) entry.getValue().size() / (double) unknowns.size());
                 },

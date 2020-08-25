@@ -24,7 +24,7 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
   // We will not set the new hand here. Do that in reportDraw.
   public boolean willDrawFaceUpCard(Card card) {
     // If card can join meld pick it up.
-    if (willCardMakeOrJoinMeldInHand(card)) {
+    if (willCardMakeOrJoinMeldInHand(this.my_hand, card)) {
       return true;
     }
 

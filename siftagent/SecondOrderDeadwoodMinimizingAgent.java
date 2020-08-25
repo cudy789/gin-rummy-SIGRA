@@ -54,6 +54,12 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return value;
   }
 
+  ////
+  // Second Order Reduction code
+  ////
+
+  // Iterate over all cards in `unknowns`, add that card to our hand, and see which new melds we are
+  // now able to create.
   static ArrayList<ArrayList<Card>> meldsOneAway(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     ArrayList<ArrayList<Card>> initialMelds = GinRummyUtil.cardsToAllMelds(hand);
     return unknowns.stream()
@@ -147,6 +153,10 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                   return a + b;
                 }));
   }
+
+  ////
+  // Opponent Modeling which is not enabled.
+  ////
 
   double approximateOpponentLayoffReduction(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     if (this.opponent_hand_known.isEmpty()) {

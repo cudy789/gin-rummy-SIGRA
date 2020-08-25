@@ -356,7 +356,7 @@ public class GinRummyGame {
 	// Returns **Player One** win Percent
 	static double runSim(GinRummyGame game) {
 		setPlayVerbose(false);
-		final int numGames = 100;
+		final int numGames = 1000;
 		int numP1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {

@@ -23,11 +23,6 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
   @Override
   // We will not set the new hand here. Do that in reportDraw.
   public boolean willDrawFaceUpCard(Card card) {
-    // If card can join meld pick it up.
-    if (willCardMakeOrJoinMeldInHand(this.my_hand, card)) {
-      return true;
-    }
-
     // Expected value of drawing from unknown cards
     double expectedValueOfUnknowns =
         computeExpectedValueOfUnknowns(this.my_hand, this.unknownCards());
@@ -40,7 +35,8 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     double valueOfBestHandAfterDrawningFaceUpCard =
         this.evaluator(this.unknownCards()).apply(handAfterPickingFaceUpCard);
 
-    // If true, pick up Face Up card.
+    // If true, pick up Face Up card, else the pile is the better bet. If they are exactly equal we
+    // will take the pile because that gives our opponent less information.
     if (valueOfBestHandAfterDrawningFaceUpCard < expectedValueOfUnknowns) {
       return true;
     } else {
@@ -64,7 +60,8 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     }
 
     if (playerNum == my_number) {
-      cardToDiscard = drawAndPickBestDiscard(this.my_hand, drawnCard, this.unknownCards());
+      // We need to set this so that SiftAgent knows which card to discard.
+      this.cardToDiscard = drawAndPickBestDiscard(this.my_hand, drawnCard, this.unknownCards());
       my_hand = handByDrawingAndDiscarding(this.my_hand, drawnCard, cardToDiscard);
     } else if (drawnCard != null) {
       opponent_hand_known.add(drawnCard);

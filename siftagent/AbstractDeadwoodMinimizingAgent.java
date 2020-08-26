@@ -49,22 +49,29 @@ public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
 
   @Override
   public void reportDraw(int playerNum, Card drawnCard) {
-    // we pushed the faceup card onto the discard_pile in willDrawFaceUpCard
-    if (discard_pile.size() > 0 && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
-      // if the drawn card is the top of the discard, remove it from the discard pile.
-      // we'll add it to the appropriate hand later.
-      discard_pile.pop();
-    } else if (playerNum != my_number) {
-      // it's not our turn and our opponent passed on the top card
-      opponent_passed.add(drawnCard);
-    }
-
+    // We drew the card
     if (playerNum == my_number) {
       // We need to set this so that SiftAgent knows which card to discard.
       this.cardToDiscard = drawAndPickBestDiscard(this.my_hand, drawnCard, this.unknownCards());
       my_hand = handByDrawingAndDiscarding(this.my_hand, drawnCard, cardToDiscard);
-    } else if (drawnCard != null) {
-      opponent_hand_known.add(drawnCard);
+    }
+    // Opponent Drew the card
+    else {
+      if (drawnCard == null) {
+        // Opponent drew from the deck, so add the face up card to the card they passed over.
+        if (!discard_pile.empty()) {
+          opponent_passed.add(discard_pile.peek());
+        }
+      } else {
+        opponent_hand_known.add(drawnCard);
+      }
+    }
+
+    // we pushed the faceup card onto the discard_pile in willDrawFaceUpCard
+    if (!discard_pile.empty() && drawnCard != null && drawnCard.equals(discard_pile.peek())) {
+      // if the drawn card is the top of the discard, remove it from the discard pile.
+      // we'll add it to the appropriate hand later.
+      discard_pile.pop();
     }
   }
 

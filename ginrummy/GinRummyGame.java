@@ -333,30 +333,30 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
-		// GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
-		// double pct = runSim(game);
-		// System.out.println(pct);
+		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+		double pct = runSim(game);
+		System.out.println(pct);
 
-		TreeMap<Double, Double> scores = new TreeMap<Double, Double>();
+		// TreeMap<Double, Double> scores = new TreeMap<Double, Double>();
 
-		DoubleStream stream = DoubleStream.iterate(0.0, (x) -> { return x + 0.05; }).parallel().limit(25);
-		DoubleStream results = stream.map((w) -> {
-			GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(w));
-			double pct = runSim(game);
-			// System.out.printf("Weight: %f    Player One Win Percent: %f\n", w, pct);
-			scores.put(w, pct);
-			return pct;
-		});
-		System.out.println(results.summaryStatistics());
-		scores.forEach((k, v) -> {
-			System.out.printf("%3f %3f\n", k, v);
-		});
+		// DoubleStream stream = DoubleStream.iterate(0.0, (x) -> { return x + 0.05; }).parallel().limit(25);
+		// DoubleStream results = stream.map((w) -> {
+		// 	GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(w));
+		// 	double pct = runSim(game);
+		// 	// System.out.printf("Weight: %f    Player One Win Percent: %f\n", w, pct);
+		// 	scores.put(w, pct);
+		// 	return pct;
+		// });
+		// System.out.println(results.summaryStatistics());
+		// scores.forEach((k, v) -> {
+		// 	System.out.printf("%3f %3f\n", k, v);
+		// });
 	}
 	
 	// Returns **Player One** win Percent
 	static double runSim(GinRummyGame game) {
 		setPlayVerbose(false);
-		final int numGames = 1000;
+		final int numGames = 5;
 		int numP1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {

@@ -25,6 +25,8 @@ public abstract class SiftAgent implements GinRummyPlayer {
   ArrayList<Card> opponent_hand_known;
   // cards that we discarded and our opponent didn't pick up
   ArrayList<Card> opponent_passed;
+  // cards our opponent explicitly discarded
+  ArrayList<Card> opponent_discarded;
   // cards in the discard pile (including the top card after any player discards)
   Stack<Card> discard_pile;
 
@@ -42,6 +44,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
     my_hand = new ArrayList<Card>();
     opponent_hand_known = new ArrayList<Card>();
     opponent_passed = new ArrayList<Card>();
+    opponent_discarded = new ArrayList<Card>();
     opponent_melds = null;
     discard_pile = new Stack<Card>();
     if (deadwoodHashTable == null) {
@@ -76,6 +79,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
     discard_pile.push(discardedCard);
     if (playerNum != my_number) {
       opponent_hand_known.remove(discardedCard); // try to remove card from opponent's known hand
+      opponent_discarded.add(discardedCard);
     }
   }
 

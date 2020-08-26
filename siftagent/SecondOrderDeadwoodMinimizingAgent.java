@@ -16,6 +16,10 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   boolean REMOVE_CARDS_ALREADY_IN_MELDS = true;
   boolean TRY_TO_PREDICT_OPPONENT_MELDS = false;
 
+  boolean REMOVE_OPPONENT_MELDS_WO_KNOWN_CARD = true;
+  boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
+  boolean REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER = true;
+
   public SecondOrderDeadwoodMinimizingAgent() {
     super();
   }
@@ -208,5 +212,70 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     rv.addAll(cardsOneAway);
 
     return rv;
+  }
+
+  ////
+  // New opponent modeling
+  ////
+
+  ArrayList<ArrayList<Card>> meldsOpponentCouldHave(
+      ArrayList<Card> opponentHand,
+      ArrayList<Card> opponentDiscarded,
+      ArrayList<Card> discardPile,
+      ArrayList<Card> unknowns) {
+
+    ArrayList<Card> passedOver = new ArrayList<Card>(discardPile);
+    passedOver.removeAll(opponentDiscarded);
+
+    ArrayList<Card> possibleCards = new ArrayList<Card>(unknowns);
+    possibleCards.addAll(opponentHand);
+    return GinRummyUtil.cardsToAllMelds(possibleCards).stream()
+        .filter(
+            (meld) -> {
+              // Determine if any of the cards in `meld` are also known to be in the opponents hand.
+              return !(this.REMOVE_OPPONENT_MELDS_WO_KNOWN_CARD
+                  && !meld.stream()
+                      .map(
+                          (card) -> {
+                            return opponentHand.contains(card);
+                          })
+                      .reduce(false, Boolean::logicalOr));
+            })
+        .filter(
+            (meld) -> {
+              return !(this.REMOVE_OPPONENT_OF_A_KIND_DISCARDED
+                  && isMeldOfAKindAndContainCardInSet(meld, opponentDiscarded));
+            })
+        .filter(
+            (meld) -> {
+              return !(this.REMOVE_OPPONENT_OF_A_KIND_DISCARDED
+                  && isMeldOfAKindAndContainCardInSet(meld, passedOver));
+            })
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
+
+  static boolean areCardsOfSameRank(ArrayList<Card> meld) {
+    if (meld.isEmpty()) {
+      return false;
+    }
+
+    int rank = meld.get(0).rank;
+
+    return meld.stream()
+        .map(
+            (c) -> {
+              return c.rank == rank;
+            })
+        .reduce(true, Boolean::logicalAnd);
+  }
+
+  boolean isMeldOfAKindAndContainCardInSet(ArrayList<Card> meld, ArrayList<Card> set) {
+    return areCardsOfSameRank(meld)
+        && set.stream()
+            .map(
+                (c) -> {
+                  return meld.contains(c);
+                })
+            .reduce(false, Boolean::logicalOr);
   }
 }

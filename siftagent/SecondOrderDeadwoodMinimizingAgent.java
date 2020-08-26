@@ -278,4 +278,47 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                 })
             .reduce(false, Boolean::logicalOr);
   }
+
+  double computeOpponentHandReduction(
+      ArrayList<Card> hand,
+      ArrayList<Card> opponentHand,
+      ArrayList<Card> opponentDiscarded,
+      ArrayList<Card> discardPile,
+      ArrayList<Card> unknowns) {
+    return hand.stream()
+        .map(
+            (card) -> {
+              return meldsOpponentCouldHave(opponentHand, opponentDiscarded, discardPile, unknowns)
+                  .stream()
+                  .filter(
+                      (meld) -> {
+                        return meld.contains(card);
+                      })
+                  .map(
+                      (meld) -> {
+                        return probabilityOpponentHasMeld(meld, opponentHand, unknowns)
+                            * (double) GinRummyUtil.getDeadwoodPoints(card);
+                      })
+                  .reduce(0.0, Double::sum);
+            })
+        .reduce(0.0, Double::sum);
+  }
+
+  double probabilityOpponentHasMeld(
+      ArrayList<Card> meld, ArrayList<Card> opponentHand, ArrayList<Card> unknowns) {
+    return meld.stream()
+        .map(
+            (c) -> {
+              if (opponentHand.contains(c)) {
+                return 1.0;
+              } else {
+                return (double) 1 / (double) unknowns.size();
+              }
+            })
+        .reduce(
+            1.0,
+            (a, b) -> {
+              return a * b;
+            });
+  }
 }

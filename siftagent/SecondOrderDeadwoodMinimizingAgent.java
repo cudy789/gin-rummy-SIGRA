@@ -11,10 +11,10 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
 
   // Optimal seems to be around 0.8 to 0.85
   double SECOND_ORDER_REDUCTION_WEIGHT = 0.85;
-  double OPPONENT_MELDS_REDUCTION_WEIGHT = 0.45;
+  double OPPONENT_MELDS_REDUCTION_WEIGHT = 1.0;
 
   boolean REMOVE_CARDS_ALREADY_IN_MELDS = true;
-  boolean TRY_TO_PREDICT_OPPONENT_MELDS = false;
+  boolean TRY_TO_PREDICT_OPPONENT_MELDS = true;
 
   boolean REMOVE_OPPONENT_MELDS_WO_KNOWN_CARD = true;
   boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
@@ -53,7 +53,13 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     // Enabled only for opponent modeling
     if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
       value -=
-          this.OPPONENT_MELDS_REDUCTION_WEIGHT * approximateOpponentLayoffReduction(hand, unknowns);
+          this.OPPONENT_MELDS_REDUCTION_WEIGHT
+              * computeOpponentHandReduction(
+                  hand,
+                  this.opponent_hand_known,
+                  this.opponent_discarded,
+                  this.discard_pile.stream().collect(Collectors.toCollection(ArrayList::new)),
+                  unknowns);
     }
     return value;
   }

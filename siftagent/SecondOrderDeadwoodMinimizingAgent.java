@@ -225,6 +225,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   ////
 
   ArrayList<ArrayList<Card>> meldsOpponentCouldHave(
+      ArrayList<Card> hand,
       ArrayList<Card> opponentHand,
       ArrayList<Card> opponentDiscarded,
       ArrayList<Card> discardPile,
@@ -235,7 +236,18 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
 
     ArrayList<Card> possibleCards = new ArrayList<Card>(unknowns);
     possibleCards.addAll(opponentHand);
+    possibleCards.addAll(hand);
+
     return GinRummyUtil.cardsToAllMelds(possibleCards).stream()
+        .filter((meld) -> {
+          return meld.stream().map((c) -> {
+            if (hand.contains(c)) {
+              return 1;
+            } else {
+              return 0;
+            }
+          }).reduce(0, Integer::sum) == 1;
+        })
         .filter(
             (meld) -> {
               // Determine if any of the cards in `meld` are also known to be in the opponents hand.
@@ -254,7 +266,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
             })
         .filter(
             (meld) -> {
-              return !(this.REMOVE_OPPONENT_OF_A_KIND_DISCARDED
+              return !(this.REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER
                   && isMeldOfAKindAndContainCardInSet(meld, passedOver));
             })
         .collect(Collectors.toCollection(ArrayList::new));
@@ -294,7 +306,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     return hand.stream()
         .map(
             (card) -> {
-              return meldsOpponentCouldHave(opponentHand, opponentDiscarded, discardPile, unknowns)
+              return meldsOpponentCouldHave(hand, opponentHand, opponentDiscarded, discardPile, unknowns)
                   .stream()
                   .filter(
                       (meld) -> {

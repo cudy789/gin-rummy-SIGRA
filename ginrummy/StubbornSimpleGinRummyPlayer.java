@@ -3,7 +3,7 @@ package ginrummy;
 import java.util.ArrayList;
 import java.util.Random;
 /*
-Same as the SimpleGinRummyAgent but instead we never knock.
+Same as the SimpleGinRummyAgent but instead we only knock when we get gin.
  */
 
 /**
@@ -11,8 +11,8 @@ Same as the SimpleGinRummyAgent but instead we never knock.
  * Ignore opponent actions and cards no longer in play.
  * Draw face up card only if it becomes part of a meld.  Draw face down card otherwise.
  * Discard a highest ranking unmelded card without regard to breaking up pairs, etc.
- * NEVER KNOCK
- * 
+ * Only knock when gin
+ *
  * @author Todd W. Neller
  * @version 1.0
 
@@ -132,7 +132,7 @@ public class StubbornSimpleGinRummyPlayer implements GinRummyPlayer {
 	public ArrayList<ArrayList<Card>> getFinalMelds() {
 		// Check if deadwood of maximal meld is low enough to go out. 
 		ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
-		if (!opponentKnocked) // && (bestMeldSets.isEmpty() || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards) > GinRummyUtil.MAX_DEADWOOD))
+		if (!opponentKnocked  && (bestMeldSets.isEmpty() || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards) > 0))
 			return null;
 		return bestMeldSets.isEmpty() ? new ArrayList<ArrayList<Card>>() : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
 	}

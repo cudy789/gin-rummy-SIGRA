@@ -1,18 +1,12 @@
 package ginrummy;
 
+import siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent;
+import siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent;
+import siftagent.SecondOrderDeadwoodMinimizingAgent;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.Random;
 import java.util.Stack;
-import java.util.TreeMap;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-
-import siftagent.NaiveDeadwoodMinimizingAgent;
-import siftagent.SecondOrderDeadwoodMinimizingAgent;
-import siftagent.SiftAgent;
-import ginrummy.StubbornSimpleGinRummyPlayer;
 
 /**
  * A class for modeling a game of Gin Rummy
@@ -40,7 +34,9 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 
  */
 public class GinRummyGame {
-	
+
+	private final int NUM_GAMES = 500;
+
 	/**
 	 * Random number generator
 	 */
@@ -333,9 +329,91 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
-		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+
+		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SimpleGinRummyPlayer());
+		System.out.println("Running tournament between SimpleGinRummyPlayer and SimpleGinRummyPlayer");
 		double pct = runSim(game);
-		System.out.println(pct);
+		System.out.println(pct + " win rate for SimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
+		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between SecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+
+		// supplied agents (normal & stubborn) and quick knocking agents vs. our best agent
+		game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+		System.out.println("Running tournament between SimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		// our competition agent vs. our best agent and quick knocking agent
+		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		// supplied agents (normal & stubborn) vs. our competition agent
+		game = new GinRummyGame(new SimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+
+		// supplied agents (normal & stubborn) vs. our quick knocking agent
+		game = new GinRummyGame(new SimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+
+
+		game = new GinRummyGame(new SimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
+		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
+		pct = runSim(game);
+		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+
+
+		System.out.println("Finished");
 
 		// TreeMap<Double, Double> scores = new TreeMap<Double, Double>();
 
@@ -356,16 +434,17 @@ public class GinRummyGame {
 	// Returns **Player One** win Percent
 	static double runSim(GinRummyGame game) {
 		setPlayVerbose(false);
-		final int numGames = 10;
+		final int numGames = game.NUM_GAMES;
 		int numP1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			int p = game.play();
-			// System.out.printf("%d: %d\n", i, p);
+//			 System.out.printf("%d: %d\n", i, p);
 			numP1Wins += p;
 		}
 		final long totalMs = System.currentTimeMillis() - startMs;
-		System.out.println(totalMs);
+//		System.out.println(totalMs + " ms");
+		System.out.println("took " + totalMs/1000.0 + " seconds to run");
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 		return (double) numP1Wins / (double) numGames;

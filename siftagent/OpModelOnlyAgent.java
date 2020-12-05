@@ -8,7 +8,7 @@ import java.util.Hashtable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class QuickKnockingSecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
+public class OpModelOnlyAgent extends NaiveDeadwoodMinimizingAgent {
 
   // Optimal seems to be around 0.8 to 0.85
   double SECOND_ORDER_REDUCTION_WEIGHT = 0.85;
@@ -21,17 +21,17 @@ public class QuickKnockingSecondOrderDeadwoodMinimizingAgent extends NaiveDeadwo
   boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
   boolean REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER = true;
 
-  public QuickKnockingSecondOrderDeadwoodMinimizingAgent() {
+  public OpModelOnlyAgent() {
     super();
   }
 
-  public QuickKnockingSecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
+  public OpModelOnlyAgent(double SecondOrderWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
-    this.TRY_TO_PREDICT_OPPONENT_MELDS = false;
+    this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
   }
 
-  protected QuickKnockingSecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight, double OppMeldsWeight) {
+  protected OpModelOnlyAgent(double SecondOrderWeight, double OppMeldsWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
@@ -62,7 +62,8 @@ public class QuickKnockingSecondOrderDeadwoodMinimizingAgent extends NaiveDeadwo
   double valueHand(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     double value = deadwoodMinusMelds(hand);
 
-    value -= this.SECOND_ORDER_REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, unknowns);
+    // disabled for opponent modelling only agent!
+//    value -= this.SECOND_ORDER_REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, unknowns);
 
     // Enabled only for opponent modeling
     if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {

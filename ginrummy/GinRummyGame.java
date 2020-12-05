@@ -1,9 +1,5 @@
 package ginrummy;
 
-import siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent;
-import siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent;
-import siftagent.SecondOrderDeadwoodMinimizingAgent;
-
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
@@ -329,106 +325,156 @@ public class GinRummyGame {
 		// System.out.printf("%d games played in %d ms.\n", numGames, totalMs);
 		// System.out.printf("Games Won: P0:%d, P1:%d.\n", numGames - numP1Wins, numP1Wins);
 
+		// Initial testing
+//		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SimpleGinRummyPlayer());
+//		System.out.println("Running tournament between SimpleGinRummyPlayer and SimpleGinRummyPlayer");
+//		double pct = runSim(game);
+//		System.out.println(pct + " win rate for SimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
+//		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between SecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//
+//		// supplied agents (normal & stubborn) and quick knocking agents vs. our best agent
+//		game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("Running tournament between SimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		// our competition agent vs. our best agent and quick knocking agent
+//		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		// supplied agents (normal & stubborn) vs. our competition agent
+//		game = new GinRummyGame(new SimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//
+//		// supplied agents (normal & stubborn) vs. our quick knocking agent
+//		game = new GinRummyGame(new SimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
+//		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//
+//		game = new GinRummyGame(new SimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
+//		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
+//		pct = runSim(game);
+//		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
 
-		GinRummyGame game = new GinRummyGame(new SimpleGinRummyPlayer(), new SimpleGinRummyPlayer());
-		System.out.println("Running tournament between SimpleGinRummyPlayer and SimpleGinRummyPlayer");
-		double pct = runSim(game);
-		System.out.println(pct + " win rate for SimpleGinRummyPlayer with n=" + game.NUM_GAMES);
 
-		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
-		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+		// added MMDOnly, OpModelOnly, and StubbornOpModel agent testing
 
-		game = new GinRummyGame(new SecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between SecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+//
+//		ArrayList<Class> playerClasses1 = new ArrayList<>();
+//		playerClasses1.add(MMDOnlyAgent.class);
+//		playerClasses1.add(OpModelOnlyAgent.class);
+//		playerClasses1.add(StubbornOpModel.class);
+//
+//
+//		playerClasses1.forEach(p1 -> {
+//			playerClasses1.forEach(p2 -> {
+//				GinRummyGame thisGame = new GinRummyGame(new p1.getClass(), new p2.getClass());
+//				System.out.println("Running tournament between " + p1 + " and " + p2);
+//				double thisPct = runSim(thisGame);
+//				System.out.println(thisPct + " win rate for " + p1 + " with n=" + thisGame.NUM_GAMES);
+//			});
+//		});
 
 
-		// supplied agents (normal & stubborn) and quick knocking agents vs. our best agent
-		game = new GinRummyGame(new SimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
-		System.out.println("Running tournament between SimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
 
-		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new SecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and SecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+		ArrayList<String> playerPool1 = new ArrayList<>();
+//		playerPool1.add("SimpleGinRummyPlayer");
+//		playerPool1.add("StubbornSimpleGinRummyPlayer");
+//		playerPool1.add("QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		playerPool1.add("NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+//		playerPool1.add("SecondOrderDeadwoodMinimizingAgent");
+		playerPool1.add("siftagent.MMDOnlyAgent"); // MMD Only
+		playerPool1.add("siftagent.OpModelOnlyAgent"); // OM Only
+		playerPool1.add("siftagent.StubbornOpModel"); // Stubborn OM
 
-		game = new GinRummyGame(new QuickKnockingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between QuickKnockingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		// our competition agent vs. our best agent and quick knocking agent
-		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and SecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for SecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		game = new GinRummyGame(new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between NoOpponentModelingSecondOrderDeadwoodMinimizingAgent and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		// supplied agents (normal & stubborn) vs. our competition agent
-		game = new GinRummyGame(new SimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
-
-		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new NoOpponentModelingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for NoOpponentModelingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+		ArrayList<String> playerPool2 = new ArrayList<>();
+		playerPool2.add("ginrummy.SimpleGinRummyPlayer"); // SPA
+		playerPool2.add("ginrummy.StubbornSimpleGinRummyPlayer");  // Stubborn SPA
+		playerPool2.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent"); // Quick Knock SIGRA
+		playerPool2.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent"); // No Op Model SIGRA
+		playerPool2.add("siftagent.SecondOrderDeadwoodMinimizingAgent"); // SIGRA
+		playerPool2.add("siftagent.MMDOnlyAgent"); // MMD Only
+		playerPool2.add("siftagent.OpModelOnlyAgent"); // OM Only
+		playerPool2.add("siftagent.StubbornOpModel"); //  Stubborn OM
 
 
-		// supplied agents (normal & stubborn) vs. our quick knocking agent
-		game = new GinRummyGame(new SimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
 
-		game = new GinRummyGame(new StubbornSimpleGinRummyPlayer(), new QuickKnockingSecondOrderDeadwoodMinimizingAgent());
-		System.out.println("\nRunning tournament between StubbornSimpleGinRummyPlayer and QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for QuickKnockingSecondOrderDeadwoodMinimizingAgent with n=" + game.NUM_GAMES);
+		playerPool1.forEach(p1 -> {
+			playerPool2.forEach(p2 -> {
+				try{
+					GinRummyGame thisGame = new GinRummyGame((GinRummyPlayer)Class.forName(p1).newInstance(), (GinRummyPlayer)Class.forName(p2).newInstance());
+					System.out.println("Running tournament between " + p1 + " and " + p2);
+					double thisPct = runSim(thisGame);
+					System.out.println(thisPct + " win rate for " + p1 + " with n=" + thisGame.NUM_GAMES);
+				} catch (Exception e) {
+					System.out.println(e);
+				}
+			});
+		});
 
 
-		game = new GinRummyGame(new SimpleGinRummyPlayer(), new StubbornSimpleGinRummyPlayer());
-		System.out.println("\nRunning tournament between SimpleGinRummyPlayer and StubbornSimpleGinRummyPlayer");
-		pct = runSim(game);
-		System.out.println(pct + " win rate for StubbornSimpleGinRummyPlayer with n=" + game.NUM_GAMES);
+
+
+
+//		allPlayers.add(MMDOnlyAgent.class);
+
+
 
 
 		System.out.println("Finished");
 
-		// TreeMap<Double, Double> scores = new TreeMap<Double, Double>();
-
-		// DoubleStream stream = DoubleStream.iterate(0.0, (x) -> { return x + 0.05; }).parallel().limit(25);
-		// DoubleStream results = stream.map((w) -> {
-		// 	GinRummyGame game = new GinRummyGame(new NaiveDeadwoodMinimizingAgent(), new SecondOrderDeadwoodMinimizingAgent(w));
-		// 	double pct = runSim(game);
-		// 	// System.out.printf("Weight: %f    Player One Win Percent: %f\n", w, pct);
-		// 	scores.put(w, pct);
-		// 	return pct;
-		// });
-		// System.out.println(results.summaryStatistics());
-		// scores.forEach((k, v) -> {
-		// 	System.out.printf("%3f %3f\n", k, v);
-		// });
 	}
 	
 	// Returns **Player One** win Percent

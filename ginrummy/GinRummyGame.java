@@ -430,11 +430,11 @@ public class GinRummyGame {
 
 
 		ArrayList<String> playerPool1 = new ArrayList<>();
-//		playerPool1.add("SimpleGinRummyPlayer");
-//		playerPool1.add("StubbornSimpleGinRummyPlayer");
-//		playerPool1.add("QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-//		playerPool1.add("NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-//		playerPool1.add("SecondOrderDeadwoodMinimizingAgent");
+//		playerPool1.add("ginrummy.SimpleGinRummyPlayer");
+//		playerPool1.add("ginrummy.StubbornSimpleGinRummyPlayer");
+//		playerPool1.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent");
+//		playerPool1.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
+//		playerPool1.add("siftagent.SecondOrderDeadwoodMinimizingAgent");
 		playerPool1.add("siftagent.MMDOnlyAgent"); // MMD Only
 		playerPool1.add("siftagent.OpModelOnlyAgent"); // OM Only
 		playerPool1.add("siftagent.StubbornOpModel"); // Stubborn OM

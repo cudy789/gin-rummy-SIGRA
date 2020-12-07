@@ -391,18 +391,31 @@ public class GinRummyGame extends Thread {
 					});
 			});
 
-		threads.forEach(tourney -> {
-				try {
-					tourney.join();
-					System.out.println("Tournament between "
-							   + tourney.players[0].getClass().getName()
-							   + " and "
-							   + tourney.players[1].getClass().getName()
-							   + " finished");
-				} catch (Exception e) {
-					System.err.println(e);
+		while (!threads.isEmpty()) {
+			ArrayList<GinRummyGame> clone = (ArrayList<GinRummyGame>)threads.clone();
+			for (GinRummyGame tourney : clone) {
+				if (!tourney.isAlive()) {
+					String p0 = tourney.players[0].getClass().getName();
+					String p1 = tourney.players[1].getClass().getName();
+                                        try {
+						tourney.join();
+						threads.remove(tourney);
+						System.out.println("Tournament between "
+								   + p0
+								   + " and "
+								   + p1
+								   + " finished");
+					} catch (Exception e) {
+						System.err.println("Tournament between "
+								   + p0
+								   + " and "
+								   + p1
+								   + " failed.");
+						threads.remove(tourney);
+						System.err.println(e);
+					}
 				}
-                                
-			});
+			}
+		}
 	}
 }

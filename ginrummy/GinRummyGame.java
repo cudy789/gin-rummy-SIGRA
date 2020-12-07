@@ -39,6 +39,11 @@ import java.nio.file.Files;
 public class GinRummyGame extends Thread {
 	private final PrintStream out;
 
+	private final int GAME_RESULT_DRAW = -1;
+
+	// number of times a hand may be repeated
+	private final int ALLOWED_REPEATS = 25;
+
 	private final int NUM_GAMES = 500;
 
 	/**
@@ -96,6 +101,7 @@ public class GinRummyGame extends Thread {
 		int startingPlayer = RANDOM.nextInt(2);
 		
 		while (scores[0] < GinRummyUtil.GOAL_SCORE && scores[1] < GinRummyUtil.GOAL_SCORE) { // while game not over
+			int repeats = 0;
 			int currentPlayer = startingPlayer;
 			int opponent = (currentPlayer == 0) ? 1 : 0;
 			
@@ -307,10 +313,19 @@ public class GinRummyGame extends Thread {
 				startingPlayer = (startingPlayer == 0) ? 1 : 0; // starting player alternates
 			}
 			else { // If the round ends due to a two card draw pile with no knocking, the round is cancelled.
+				repeats += 1;
 				if (playVerbose)
 					out.println("The draw pile was reduced to two cards without knocking, so the hand is cancelled.");
 				else
 					out.print("x");
+				if (repeats > ALLOWED_REPEATS) {
+					if (playVerbose) {
+						out.println("Maximum number of repeats exceeded.");
+					} else {
+						out.print(" -> x");
+					}
+					return -1;
+				}
 			}
 			
 			// report final hands
@@ -334,16 +349,27 @@ public class GinRummyGame extends Thread {
 	public void run() {
 		out.println("Running tournament between " + players[0].getClass().getName() + " and " + players[1].getClass().getName());
 
-		int numP1Wins = 0;
+		int numDraws = 0;
+		int p0Wins = 0;
+		int p1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < NUM_GAMES; i++) {
 			int p = play();
-			numP1Wins += p;
+			if (p == GAME_RESULT_DRAW) {
+				numDraws += 1;
+			} else if (p == 1) {
+				p1Wins += 1;
+			} else {
+				p0Wins += 1;
+			}
 		}
 		final long totalMs = System.currentTimeMillis() - startMs;
-		out.println("took " + totalMs/1000.0 + " seconds to run");
-		double p0WinPct = (double) numP1Wins / (double) NUM_GAMES;
-		out.println(p0WinPct + " win rate for " + players[0].getClass().getName() + " with n=" + NUM_GAMES);
+		double p0WinPct = (double) p0Wins / (double) NUM_GAMES;
+		double p1WinPct = (double) p1Wins / (double) NUM_GAMES;
+		double drawPct = (double) numDraws / (double) NUM_GAMES;
+		out.println(p0WinPct + " win rate (" + p0Wins + "/" + NUM_GAMES + ") for " + players[0].getClass().getName());
+		out.println(p1WinPct + " win rate (" + p1Wins + "/" + NUM_GAMES + ") for " + players[1].getClass().getName());
+		out.println(drawPct + " draws (" + numDraws + "/" + NUM_GAMES + ")");
 	}
 
 	/**

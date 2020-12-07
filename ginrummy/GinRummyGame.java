@@ -295,7 +295,7 @@ public class GinRummyGame extends Thread {
 					if (playVerbose)
 						out.printf("Player %d scores the deadwood difference of %d.\n", currentPlayer, opponentDeadwood - knockingDeadwood);
                                         else
-						out.print(opponent);
+						out.print(currentPlayer);
 				}
 				else { // undercut win for opponent
 					scores[opponent] += GinRummyUtil.UNDERCUT_BONUS + knockingDeadwood - opponentDeadwood;

@@ -131,6 +131,8 @@ public class GinRummyGame {
 					if (!hands.get(currentPlayer).contains(discardCard) || discardCard == faceUpCard) {
 						if (playVerbose)
 							System.out.printf("Player %d discards %s illegally and forfeits.\n", currentPlayer, discardCard);
+                                                else
+                                                    System.err.printf("\n!!! Illegal discard by player %d !!!\n", currentPlayer);
 						return opponent;
 					}
 					hands.get(currentPlayer).remove(discardCard);
@@ -175,6 +177,8 @@ public class GinRummyGame {
 							|| (meldBitstring & unmelded) != meldBitstring) { // ... or meld not in hand
 						if (playVerbose)
 							System.out.printf("Player %d melds %s illegally and forfeits.\n", currentPlayer, knockMelds);
+                                                else
+                                                    System.err.printf("\n!!! Illegal meld by player %d !!!\n", currentPlayer);
 						return opponent;
 					}
 					unmelded &= ~meldBitstring; // remove successfully melded cards from 
@@ -183,7 +187,9 @@ public class GinRummyGame {
 				final int knockingDeadwood = GinRummyUtil.getDeadwoodPoints(knockMelds, hands.get(currentPlayer));
 				if (knockingDeadwood > GinRummyUtil.MAX_DEADWOOD) {
 					if (playVerbose)
-						System.out.printf("Player %d melds %s with greater than %d deadwood and forfeits.\n", currentPlayer, knockMelds, knockingDeadwood);				
+						System.out.printf("Player %d melds %s with greater than %d deadwood and forfeits.\n", currentPlayer, knockMelds, knockingDeadwood);
+                                        else
+                                            System.err.printf("\n!!! Illegal knock by player %d !!!\n", currentPlayer);
 					return opponent;
 				}
 				
@@ -215,6 +221,8 @@ public class GinRummyGame {
 							|| (meldBitstring & opponentUnmelded) != meldBitstring) { // ... or meld not in hand
 						if (playVerbose)
 							System.out.printf("Player %d melds %s illegally and forfeits.\n", opponent, opponentMelds);
+                                                else
+                                                    System.out.printf("\n!!! Illegal meld by player %d !!!\n", opponent);
 						return currentPlayer;
 					}
 					opponentUnmelded &= ~meldBitstring; // remove successfully melded cards from 
@@ -455,7 +463,7 @@ public class GinRummyGame {
 		// playerPool2.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent"); // Quick Knock SIGRA
 		// playerPool2.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent"); // No Op Model SIGRA
 		// playerPool2.add("siftagent.SecondOrderDeadwoodMinimizingAgent"); // SIGRA
-		playerPool2.add("siftagent.MMDOnlyAgent"); // MMD Only
+		// playerPool2.add("siftagent.MMDOnlyAgent"); // MMD Only
 		playerPool2.add("siftagent.OpModelOnlyAgent"); // OM Only
 		playerPool2.add("siftagent.StubbornOpModel"); //  Stubborn OM
 

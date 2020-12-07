@@ -265,23 +265,31 @@ public class GinRummyGame {
 				if (knockingDeadwood == 0) { // gin round win
 					scores[currentPlayer] += GinRummyUtil.GIN_BONUS + opponentDeadwood;
 					if (playVerbose)
-						System.out.printf("Player %d scores the gin bonus of %d plus opponent deadwood %d for %d total points.\n", currentPlayer, GinRummyUtil.GIN_BONUS, opponentDeadwood, GinRummyUtil.GIN_BONUS + opponentDeadwood); 
+						System.out.printf("Player %d scores the gin bonus of %d plus opponent deadwood %d for %d total points.\n", currentPlayer, GinRummyUtil.GIN_BONUS, opponentDeadwood, GinRummyUtil.GIN_BONUS + opponentDeadwood);
+                                        else
+                                            System.err.print(currentPlayer);
 				}
 				else if (knockingDeadwood < opponentDeadwood) { // non-gin round win
 					scores[currentPlayer] += opponentDeadwood - knockingDeadwood;
 					if (playVerbose)
-						System.out.printf("Player %d scores the deadwood difference of %d.\n", currentPlayer, opponentDeadwood - knockingDeadwood); 
+						System.out.printf("Player %d scores the deadwood difference of %d.\n", currentPlayer, opponentDeadwood - knockingDeadwood);
+                                        else
+                                            System.out.print(opponent);
 				}
 				else { // undercut win for opponent
 					scores[opponent] += GinRummyUtil.UNDERCUT_BONUS + knockingDeadwood - opponentDeadwood;
 					if (playVerbose)
-						System.out.printf("Player %d undercuts and scores the undercut bonus of %d plus deadwood difference of %d for %d total points.\n", opponent, GinRummyUtil.UNDERCUT_BONUS, knockingDeadwood - opponentDeadwood, GinRummyUtil.UNDERCUT_BONUS + knockingDeadwood - opponentDeadwood); 
+						System.out.printf("Player %d undercuts and scores the undercut bonus of %d plus deadwood difference of %d for %d total points.\n", opponent, GinRummyUtil.UNDERCUT_BONUS, knockingDeadwood - opponentDeadwood, GinRummyUtil.UNDERCUT_BONUS + knockingDeadwood - opponentDeadwood);
+                                        else
+                                            System.err.print(opponent);
 				}
 				startingPlayer = (startingPlayer == 0) ? 1 : 0; // starting player alternates
 			}
 			else { // If the round ends due to a two card draw pile with no knocking, the round is cancelled.
-				if (playVerbose)
-					System.out.println("The draw pile was reduced to two cards without knocking, so the hand is cancelled.");
+                            if (playVerbose)
+                                System.out.println("The draw pile was reduced to two cards without knocking, so the hand is cancelled.");
+                            else
+                                System.err.print("x");
 			}
 			
 			// report final hands
@@ -297,6 +305,8 @@ public class GinRummyGame {
 		}
 		if (playVerbose)
 			System.out.printf("Player %s wins.\n", scores[0] > scores[1] ? 0 : 1);
+                else
+                    System.err.printf(" -> %d\n", scores[0] > scores[1] ? 0 : 1);
 		return scores[0] >= GinRummyUtil.GOAL_SCORE ? 0 : 1;
 	}
 
@@ -435,16 +445,16 @@ public class GinRummyGame {
 //		playerPool1.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent");
 //		playerPool1.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
 //		playerPool1.add("siftagent.SecondOrderDeadwoodMinimizingAgent");
-		playerPool1.add("siftagent.MMDOnlyAgent"); // MMD Only
-		playerPool1.add("siftagent.OpModelOnlyAgent"); // OM Only
-		playerPool1.add("siftagent.StubbornOpModel"); // Stubborn OM
+//		playerPool1.add("siftagent.StubbornOpModel");// Stubborn OM
+//              playerPool1.add("siftagent.OpModelOnlyAgent");// OM Only
+                playerPool1.add("siftagent.MMDOnlyAgent"); // MMD Only
 
 		ArrayList<String> playerPool2 = new ArrayList<>();
-		playerPool2.add("ginrummy.SimpleGinRummyPlayer"); // SPA
-		playerPool2.add("ginrummy.StubbornSimpleGinRummyPlayer");  // Stubborn SPA
-		playerPool2.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent"); // Quick Knock SIGRA
-		playerPool2.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent"); // No Op Model SIGRA
-		playerPool2.add("siftagent.SecondOrderDeadwoodMinimizingAgent"); // SIGRA
+		// playerPool2.add("ginrummy.SimpleGinRummyPlayer"); // SPA
+		// playerPool2.add("ginrummy.StubbornSimpleGinRummyPlayer");  // Stubborn SPA
+		// playerPool2.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent"); // Quick Knock SIGRA
+		// playerPool2.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent"); // No Op Model SIGRA
+		// playerPool2.add("siftagent.SecondOrderDeadwoodMinimizingAgent"); // SIGRA
 		playerPool2.add("siftagent.MMDOnlyAgent"); // MMD Only
 		playerPool2.add("siftagent.OpModelOnlyAgent"); // OM Only
 		playerPool2.add("siftagent.StubbornOpModel"); //  Stubborn OM
@@ -456,7 +466,7 @@ public class GinRummyGame {
 				try{
 					GinRummyGame thisGame = new GinRummyGame((GinRummyPlayer)Class.forName(p1).newInstance(), (GinRummyPlayer)Class.forName(p2).newInstance());
 					System.out.println("Running tournament between " + p1 + " and " + p2);
-					double thisPct = runSim(thisGame);
+					double thisPct = runSim(thisGame, p1, p2);
 					System.out.println(thisPct + " win rate for " + p1 + " with n=" + thisGame.NUM_GAMES);
 				} catch (Exception e) {
 					System.out.println(e);
@@ -478,14 +488,15 @@ public class GinRummyGame {
 	}
 	
 	// Returns **Player One** win Percent
-	static double runSim(GinRummyGame game) {
+    static double runSim(GinRummyGame game, String p1, String p2) {
 		setPlayVerbose(false);
 		final int numGames = game.NUM_GAMES;
 		int numP1Wins = 0;
 		final long startMs = System.currentTimeMillis();
 		for (int i = 0; i < numGames; i++) {
 			int p = game.play();
-//			 System.out.printf("%d: %d\n", i, p);
+                        String winner = (p == 0) ? p1 : p2;
+                        System.err.printf("Game %d to %s\n", i, winner);
 			numP1Wins += p;
 		}
 		final long totalMs = System.currentTimeMillis() - startMs;

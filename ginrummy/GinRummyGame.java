@@ -392,6 +392,7 @@ public class GinRummyGame extends Thread {
 			});
 
 		while (!threads.isEmpty()) {
+			Thread.yield();
 			ArrayList<GinRummyGame> clone = (ArrayList<GinRummyGame>)threads.clone();
 			for (GinRummyGame tourney : clone) {
 				if (!tourney.isAlive()) {

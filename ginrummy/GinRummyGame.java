@@ -94,6 +94,7 @@ public class GinRummyGame extends Thread {
 	 */
 	@SuppressWarnings("unchecked")
 	public int play() {
+		int repeats = 0;
 		final int[] scores = new int[2];
 		final ArrayList<ArrayList<Card>> hands = new ArrayList<ArrayList<Card>>();
 		hands.add(new ArrayList<Card>());
@@ -101,7 +102,6 @@ public class GinRummyGame extends Thread {
 		int startingPlayer = RANDOM.nextInt(2);
 		
 		while (scores[0] < GinRummyUtil.GOAL_SCORE && scores[1] < GinRummyUtil.GOAL_SCORE) { // while game not over
-			int repeats = 0;
 			int currentPlayer = startingPlayer;
 			int opponent = (currentPlayer == 0) ? 1 : 0;
 			
@@ -311,13 +311,13 @@ public class GinRummyGame extends Thread {
 						out.print(opponent);
 				}
 				startingPlayer = (startingPlayer == 0) ? 1 : 0; // starting player alternates
-			}
-			else { // If the round ends due to a two card draw pile with no knocking, the round is cancelled.
+			} else { // If the round ends due to a two card draw pile with no knocking, the round is cancelled.
 				repeats += 1;
-				if (playVerbose)
+				if (playVerbose) {
 					out.println("The draw pile was reduced to two cards without knocking, so the hand is cancelled.");
-				else
+				} else {
 					out.print("x");
+				}
 				if (repeats > ALLOWED_REPEATS) {
 					if (playVerbose) {
 						out.println("Maximum number of repeats exceeded.");
@@ -405,7 +405,7 @@ public class GinRummyGame extends Thread {
 						try {
 							GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).newInstance();
 							GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).newInstance();
-							Path outpath = Paths.get(p1 + "-vs-" + p2 + "-results.txt");
+							Path outpath = Paths.get("results/" + p1 + "-vs-" + p2 + "-results.txt");
 							System.out.println("Writing output to " + outpath);
 							OutputStream out = Files.newOutputStream(outpath);
 							GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
@@ -417,30 +417,26 @@ public class GinRummyGame extends Thread {
 					});
 			});
 
-		while (!threads.isEmpty()) {
-			Thread.yield();
-			ArrayList<GinRummyGame> clone = (ArrayList<GinRummyGame>)threads.clone();
-			for (GinRummyGame tourney : clone) {
-				if (!tourney.isAlive()) {
+		boolean stillLive = true;
+		while (stillLive) {
+			stillLive = false;
+			for (GinRummyGame tourney : threads) {
+				try {
+					tourney.join(3600_0000);
+				} catch (InterruptedException e) {
+					// i don't know what to do with this...
+					System.err.println("InterruptedException: " + e);
+				}
+				if (tourney.isAlive()) {
+					stillLive = true;
+				} else {
 					String p0 = tourney.players[0].getClass().getName();
 					String p1 = tourney.players[1].getClass().getName();
-                                        try {
-						tourney.join();
-						threads.remove(tourney);
-						System.out.println("Tournament between "
+					System.out.println("Tournament between "
 								   + p0
 								   + " and "
 								   + p1
 								   + " finished");
-					} catch (Exception e) {
-						System.err.println("Tournament between "
-								   + p0
-								   + " and "
-								   + p1
-								   + " failed.");
-						threads.remove(tourney);
-						System.err.println(e);
-					}
 				}
 			}
 		}

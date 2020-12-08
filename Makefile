@@ -6,8 +6,11 @@
 #  for addressing that -target 1.8 changes to --release 8
 version=8
 
+results:
+	mkdir -p results
+
 build:
 	javac --release $(version) **/*.java
 
-run: build
+run: build results
 	java ginrummy.GinRummyGame

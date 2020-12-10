@@ -49,7 +49,7 @@ public class GinRummyGame implements Runnable {
 	// number of times a hand may be repeated
 	private final int ALLOWED_REPEATS = 25;
 
-	private final int NUM_GAMES = 1;
+	private final int NUM_GAMES = 500;
 
 	/**
 	 * Random number generator

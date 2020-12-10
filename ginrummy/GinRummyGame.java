@@ -4,12 +4,17 @@ package ginrummy;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
-import java.lang.Thread;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.Runnable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 /**
  * A class for modeling a game of Gin Rummy
@@ -36,7 +41,7 @@ import java.nio.file.Files;
  02111-1307, USA.
 
 */
-public class GinRummyGame extends Thread {
+public class GinRummyGame implements Runnable {
 	private final PrintStream out;
 
 	private final int GAME_RESULT_DRAW = -1;
@@ -377,67 +382,47 @@ public class GinRummyGame extends Thread {
 	 * @param args (unused)
 	 */
 	public static void main(final String[] args) {
-		ArrayList<String> playerPool1 = new ArrayList<>();
-		playerPool1.add("ginrummy.SimpleGinRummyPlayer");
-		playerPool1.add("ginrummy.StubbornSimpleGinRummyPlayer");
-		playerPool1.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		playerPool1.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-		playerPool1.add("siftagent.SecondOrderDeadwoodMinimizingAgent");
-		playerPool1.add("siftagent.StubbornOpModel");
-                playerPool1.add("siftagent.OpModelOnlyAgent");
-                playerPool1.add("siftagent.MMDOnlyAgent");
+		String[] playerPool = new String[] {
+			"ginrummy.SimpleGinRummyPlayer",
+			"ginrummy.StubbornSimpleGinRummyPlayer",
+			"siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
+			"siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
+			"siftagent.SecondOrderDeadwoodMinimizingAgent",
+			"siftagent.StubbornOpModel",
+			"siftagent.OpModelOnlyAgent",
+			"siftagent.MMDOnlyAgent"
+		};
+                
+		ExecutorCompletionService<Path> executor = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
-		ArrayList<String> playerPool2 = new ArrayList<>();
-		playerPool2.add("ginrummy.SimpleGinRummyPlayer");
-		playerPool2.add("ginrummy.StubbornSimpleGinRummyPlayer");
-		playerPool2.add("siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent");
-		playerPool2.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
-		playerPool2.add("siftagent.SecondOrderDeadwoodMinimizingAgent");
-		playerPool2.add("siftagent.MMDOnlyAgent");
-		playerPool2.add("siftagent.OpModelOnlyAgent");
-		playerPool2.add("siftagent.StubbornOpModel");
+		int tourney_ct = 0;
 
-		ArrayList<GinRummyGame> threads = new ArrayList<>();
-
-
-		playerPool1.forEach(p1 -> {
-				playerPool2.forEach(p2 -> {
-						try {
-							GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).newInstance();
-							GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).newInstance();
-							Path outpath = Paths.get("results/" + p1 + "-vs-" + p2 + "-results.txt");
-							System.out.println("Writing output to " + outpath);
-							OutputStream out = Files.newOutputStream(outpath);
-							GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
-							tourney.start();
-							threads.add(tourney);
-						} catch (Exception e) {
-							System.err.println(e);
-						}
-					});
-			});
-
-		boolean stillLive = true;
-		while (stillLive) {
-			stillLive = false;
-			for (GinRummyGame tourney : threads) {
+		for (String p1 : playerPool) {
+			for (String p2 : playerPool) {
 				try {
-					tourney.join(3600_0000);
-				} catch (InterruptedException e) {
-					// i don't know what to do with this...
-					System.err.println("InterruptedException: " + e);
+					GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).newInstance();
+					GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).newInstance();
+					Path outpath = Paths.get("results/" + p1 + "-vs-" + p2 + "-results.txt");
+					OutputStream out = Files.newOutputStream(outpath);
+					GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
+					executor.submit(tourney, outpath);
+					tourney_ct++;
+				} catch (Exception e) {
+					System.err.println("Error starting tournament: " + e);
 				}
-				if (tourney.isAlive()) {
-					stillLive = true;
-				} else {
-					String p0 = tourney.players[0].getClass().getName();
-					String p1 = tourney.players[1].getClass().getName();
-					System.out.println("Tournament between "
-								   + p0
-								   + " and "
-								   + p1
-								   + " finished");
-				}
+			}
+		}
+		
+		while (tourney_ct != 0) {
+			try {
+				Future<Path> tourney = executor.take();
+				Path results = tourney.get();
+				
+				System.out.println("Tournament " + results + " finished");
+				tourney_ct--;
+			} catch (Exception e) {
+				System.err.println("Error getting tournament results: " + e);
+				continue;
 			}
 		}
 	}

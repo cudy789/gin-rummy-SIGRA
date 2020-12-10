@@ -6,11 +6,12 @@
 #  for addressing that -target 1.8 changes to --release 8
 version=8
 
-results:
-	mkdir -p results
-
 build:
 	javac --release $(version) **/*.java
 
 run: build results
 	java ginrummy.GinRummyGame
+
+docker:
+	docker build . -t jmmaloney4/sigra:latest
+	docker push jmmaloney4/sigra:latest

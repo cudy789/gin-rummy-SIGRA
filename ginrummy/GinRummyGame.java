@@ -49,7 +49,7 @@ public class GinRummyGame implements Runnable {
 	// number of times a hand may be repeated
 	private final int ALLOWED_REPEATS = 25;
 
-	private final int NUM_GAMES = 500;
+	private final int NUM_GAMES = 1;
 
 	/**
 	 * Random number generator
@@ -377,21 +377,22 @@ public class GinRummyGame implements Runnable {
 		out.println(drawPct + " draws (" + numDraws + "/" + NUM_GAMES + ")");
 	}
 
-	/**
-	 * Test and demonstrate the use of the GinRummyGame class.
-	 * @param args (unused)
-	 */
+	static final String[] playerPool = new String[] {
+		"ginrummy.SimpleGinRummyPlayer",
+		"ginrummy.StubbornSimpleGinRummyPlayer",
+		"siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
+		"siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
+		"siftagent.SecondOrderDeadwoodMinimizingAgent",
+		"siftagent.StubbornOpModel",
+		"siftagent.OpModelOnlyAgent",
+		"siftagent.MMDOnlyAgent"
+	};
+	
 	public static void main(final String[] args) {
-		String[] playerPool = new String[] {
-			"ginrummy.SimpleGinRummyPlayer",
-			"ginrummy.StubbornSimpleGinRummyPlayer",
-			"siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
-			"siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
-			"siftagent.SecondOrderDeadwoodMinimizingAgent",
-			"siftagent.StubbornOpModel",
-			"siftagent.OpModelOnlyAgent",
-			"siftagent.MMDOnlyAgent"
-		};
+		try {
+			Files.createDirectories(Paths.get("results/"));
+		} catch (Exception e) { System.err.println(e); }
+
                 
 		ExecutorCompletionService<Path> executor = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 

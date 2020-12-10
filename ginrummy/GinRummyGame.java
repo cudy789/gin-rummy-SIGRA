@@ -327,7 +327,7 @@ public class GinRummyGame implements Runnable {
 					if (playVerbose) {
 						out.println("Maximum number of repeats exceeded.");
 					} else {
-						out.print(" -> x");
+						out.println(" -> x");
 					}
 					return -1;
 				}

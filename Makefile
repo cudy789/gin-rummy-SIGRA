@@ -14,3 +14,7 @@ build:
 
 run: build results
 	java ginrummy.GinRummyGame
+
+docker:
+	docker build . -t jmmaloney4/sigra:latest
+	docker push jmmaloney4/sigra:latest

@@ -44,7 +44,7 @@ public class GinRummyGame extends Thread {
 	// number of times a hand may be repeated
 	private final int ALLOWED_REPEATS = 25;
 
-	private final int NUM_GAMES = 500;
+	private final int NUM_GAMES = 1;
 
 	/**
 	 * Random number generator
@@ -384,8 +384,8 @@ public class GinRummyGame extends Thread {
 		playerPool1.add("siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent");
 		playerPool1.add("siftagent.SecondOrderDeadwoodMinimizingAgent");
 		playerPool1.add("siftagent.StubbornOpModel");
-                playerPool1.add("siftagent.OpModelOnlyAgent");
-                playerPool1.add("siftagent.MMDOnlyAgent");
+        playerPool1.add("siftagent.OpModelOnlyAgent");
+        playerPool1.add("siftagent.MMDOnlyAgent");
 
 		ArrayList<String> playerPool2 = new ArrayList<>();
 		playerPool2.add("ginrummy.SimpleGinRummyPlayer");
@@ -399,16 +399,20 @@ public class GinRummyGame extends Thread {
 
 		ArrayList<GinRummyGame> threads = new ArrayList<>();
 
+		try {
+			Files.createDirectories(Paths.get("results/"));
+		} catch (Exception e) { System.err.println(e); }
 
 		playerPool1.forEach(p1 -> {
 				playerPool2.forEach(p2 -> {
 						try {
-							GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).newInstance();
-							GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).newInstance();
+							GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).getDeclaredConstructor().newInstance();
+							GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).getDeclaredConstructor().newInstance();
 							Path outpath = Paths.get("results/" + p1 + "-vs-" + p2 + "-results.txt");
-							System.out.println("Writing output to " + outpath);
+							// System.out.println("Writing output to " + outpath);
 							OutputStream out = Files.newOutputStream(outpath);
 							GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
+							tourney.playVerbose = true;
 							tourney.start();
 							threads.add(tourney);
 						} catch (Exception e) {

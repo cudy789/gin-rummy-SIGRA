@@ -411,10 +411,10 @@ public class GinRummyGame implements Runnable {
 				try {
 					GinRummyPlayer p0i = p1.get();
 					GinRummyPlayer p1i = p2.get();
-					// Path outpath = Paths.get("results/" + p0i.getClass().getName() + "-vs-" + p1i.getClass().getName() + "-results.txt");
-					// OutputStream out = Files.newOutputStream(outpath);
-					GinRummyGame tourney = new GinRummyGame(p0i, p1i, System.out);
-					executor.submit(tourney, null);
+					Path outpath = Paths.get("results/" + p0i.getClass().getName() + "-vs-" + p1i.getClass().getName() + "-results.txt");
+					OutputStream out = Files.newOutputStream(outpath);
+					GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
+					executor.submit(tourney, outpath);
 					tourney_ct++;
 				} catch (Exception e) {
 					System.err.println("Error starting tournament: " + e);

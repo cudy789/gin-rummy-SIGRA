@@ -13,7 +13,8 @@ build:
 clean:
 	rm -r bin/
 
-run: build results
+run: build
+	mkdir -p results/
 	java -cp bin/ ginrummy.GinRummyGame
 
 docker:

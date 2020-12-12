@@ -1,4 +1,4 @@
-package siftagent;
+package sigra.agents;
 
 // ONLY MYOPIC MELD DISTANCE, NO STUBBORN KNOCKING OR OPPONENT MODELLING
 // DONE

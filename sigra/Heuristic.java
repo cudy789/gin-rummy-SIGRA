@@ -1,4 +1,4 @@
-//package siftagent;
+//package sigra;
 //
 //import ginrummy.Card;
 //import ginrummy.GinRummyUtil;

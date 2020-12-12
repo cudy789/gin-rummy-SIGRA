@@ -393,7 +393,6 @@ public class GinRummyGame implements Runnable {
 			Files.createDirectories(Paths.get("results/"));
 		} catch (Exception e) { System.err.println(e); }
 
-                
 		ExecutorCompletionService<Path> executor = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
 		int tourney_ct = 0;

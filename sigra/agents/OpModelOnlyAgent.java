@@ -1,13 +1,14 @@
-package siftagent;
+package sigra.agents;
 
 import ginrummy.Card;
 import ginrummy.GinRummyUtil;
+
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingAgent {
+public class OpModelOnlyAgent extends NaiveDeadwoodMinimizingAgent {
 
   // Optimal seems to be around 0.8 to 0.85
   double SECOND_ORDER_REDUCTION_WEIGHT = 0.85;
@@ -20,22 +21,35 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
   boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
   boolean REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER = true;
 
-  public SecondOrderDeadwoodMinimizingAgent() {
+  public OpModelOnlyAgent() {
     super();
   }
 
-  public SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight) {
+  public OpModelOnlyAgent(double SecondOrderWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
-    this.TRY_TO_PREDICT_OPPONENT_MELDS = false;
+    this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
   }
 
-  protected SecondOrderDeadwoodMinimizingAgent(double SecondOrderWeight, double OppMeldsWeight) {
+  protected OpModelOnlyAgent(double SecondOrderWeight, double OppMeldsWeight) {
     super();
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.TRY_TO_PREDICT_OPPONENT_MELDS = true;
     this.OPPONENT_MELDS_REDUCTION_WEIGHT = OppMeldsWeight;
   }
+
+    @Override
+    public ArrayList<ArrayList<Card>> getFinalMelds() {
+        if (GinRummyUtil.getDeadwoodPoints(my_hand) <= 10 || opponent_melds != null) {
+            ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(my_hand);
+            if (bestMelds.isEmpty()) {
+                return new ArrayList<ArrayList<Card>>();
+            }
+            return bestMelds.get(0);
+        }
+        return null;
+    }
+
 
   @Override
   public Function<ArrayList<Card>, Double> evaluator(ArrayList<Card> unknowns) {
@@ -44,15 +58,16 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
     };
   }
 
-  // Compute the score for a given hand, the lower the better
+  // Compute the score for a given hand.
   double valueHand(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     double value = deadwoodMinusMelds(hand);
 
-    value -= this.SECOND_ORDER_REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, unknowns);
+    // disabled for opponent modelling only agent!
+//    value -= this.SECOND_ORDER_REDUCTION_WEIGHT * approximateSecondOrderReduction(hand, unknowns);
 
     // Enabled only for opponent modeling
     if (this.TRY_TO_PREDICT_OPPONENT_MELDS) {
-      value -=
+      value +=
           this.OPPONENT_MELDS_REDUCTION_WEIGHT
               * computeOpponentHandReduction(
                   hand,
@@ -140,7 +155,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
             });
     return table;
   }
-  // the higher the better
+
   double approximateSecondOrderReduction(ArrayList<Card> hand, ArrayList<Card> unknowns) {
     Hashtable<Card, ArrayList<Card>> table = meldsOneAwayTable(hand, unknowns);
     ArrayList<Card> cardsAlreadyInMelds = flattenMeldSet(getBestMeldsWrapper(hand));
@@ -296,7 +311,7 @@ public class SecondOrderDeadwoodMinimizingAgent extends NaiveDeadwoodMinimizingA
                 })
             .reduce(false, Boolean::logicalOr);
   }
-  // the higher the better!
+
   double computeOpponentHandReduction(
       ArrayList<Card> hand,
       ArrayList<Card> opponentHand,

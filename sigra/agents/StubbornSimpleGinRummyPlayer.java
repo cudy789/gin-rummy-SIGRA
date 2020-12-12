@@ -1,4 +1,4 @@
-package ginrummy;
+package sigra.agents;
 
 import java.util.ArrayList;
 import java.util.Random;

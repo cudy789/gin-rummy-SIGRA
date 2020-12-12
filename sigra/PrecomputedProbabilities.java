@@ -1,4 +1,4 @@
-package siftagent;
+package sigra;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

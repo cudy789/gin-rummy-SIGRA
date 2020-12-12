@@ -1,4 +1,4 @@
-package sigra.agents;
+package sigra.agents.util;
 
 import ginrummy.Card;
 import java.util.ArrayList;

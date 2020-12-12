@@ -1,4 +1,4 @@
-package sigra.agents;
+package sigra.agents.util;
 
 import ginrummy.Card;
 import java.util.ArrayList;
@@ -8,6 +8,10 @@ import java.util.function.ToDoubleFunction;
 
 public abstract class AbstractDeadwoodMinimizingAgent extends SiftAgent
     implements DeadwoodMinimizingAgent {
+
+  public AbstractDeadwoodMinimizingAgent(boolean stubborn) {
+    super(stubborn);
+  }
 
   public BinaryOperator<ArrayList<Card>> accumulator(ArrayList<Card> unknowns) {
     Function<ArrayList<Card>, Double> evaluator = this.evaluator(unknowns);

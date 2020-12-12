@@ -1,5 +1,8 @@
 package sigra.agents;
 
+import ginrummy.Card;
+import ginrummy.GinRummyPlayer;
+import ginrummy.GinRummyUtil;
 import java.util.ArrayList;
 import java.util.Random;
 

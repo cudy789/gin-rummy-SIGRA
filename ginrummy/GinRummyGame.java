@@ -2,6 +2,7 @@
 package ginrummy;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Stack;
 import java.io.OutputStream;
@@ -15,6 +16,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
+
+import ginrummy.GinRummyPlayer;
+import sigra.agents.SimpleGinRummyPlayer;
+import sigra.agents.StubbornSimpleGinRummyPlayer;
+import sigra.agents.SIGRA;
+
 
 /**
  * A class for modeling a game of Gin Rummy
@@ -49,7 +57,7 @@ public class GinRummyGame implements Runnable {
 	// number of times a hand may be repeated
 	private final int ALLOWED_REPEATS = 25;
 
-	private final int NUM_GAMES = 500;
+	private final int NUM_GAMES = 10;
 
 	/**
 	 * Random number generator
@@ -376,19 +384,20 @@ public class GinRummyGame implements Runnable {
 		out.println(p1WinPct + " win rate (" + p1Wins + "/" + NUM_GAMES + ") for " + players[1].getClass().getName());
 		out.println(drawPct + " draws (" + numDraws + "/" + NUM_GAMES + ")");
 	}
-
-	static final String[] playerPool = new String[] {
-		"sigra.agents.SimpleGinRummyPlayer",
-		"sigra.agents.StubbornSimpleGinRummyPlayer",
-		"sigra.agents.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
-		"sigra.agents.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
-		"sigra.agents.SecondOrderDeadwoodMinimizingAgent",
-		"sigra.agents.StubbornOpModel",
-		"sigra.agents.OpModelOnlyAgent",
-		"sigra.agents.MMDOnlyAgent"
-	};
 	
 	public static void main(final String[] args) {
+		ArrayList<Supplier<GinRummyPlayer>> playerPool = new ArrayList<Supplier<GinRummyPlayer>>(8);
+		playerPool.add(() -> new SimpleGinRummyPlayer());
+		playerPool.add(() -> new StubbornSimpleGinRummyPlayer());
+		playerPool.add(() -> new SIGRA(true, true, true));
+		playerPool.add(() -> new SIGRA(false, true, true));
+		playerPool.add(() -> new SIGRA(true, false, true));
+		playerPool.add(() -> new SIGRA(false, false, true));
+		playerPool.add(() -> new SIGRA(true, true, false));
+		playerPool.add(() -> new SIGRA(false, true, false));
+		playerPool.add(() -> new SIGRA(true, false, false));
+		playerPool.add(() -> new SIGRA(false, false, false));
+
 		try {
 			Files.createDirectories(Paths.get("results/"));
 		} catch (Exception e) { System.err.println(e); }
@@ -397,15 +406,15 @@ public class GinRummyGame implements Runnable {
 
 		int tourney_ct = 0;
 
-		for (String p1 : playerPool) {
-			for (String p2 : playerPool) {
+		for (Supplier<GinRummyPlayer> p1 : playerPool) {
+			for (Supplier<GinRummyPlayer> p2 : playerPool) {
 				try {
-					GinRummyPlayer p0i = (GinRummyPlayer)Class.forName(p1).newInstance();
-					GinRummyPlayer p1i = (GinRummyPlayer)Class.forName(p2).newInstance();
-					Path outpath = Paths.get("results/" + p1 + "-vs-" + p2 + "-results.txt");
-					OutputStream out = Files.newOutputStream(outpath);
-					GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
-					executor.submit(tourney, outpath);
+					GinRummyPlayer p0i = p1.get();
+					GinRummyPlayer p1i = p2.get();
+					// Path outpath = Paths.get("results/" + p0i.getClass().getName() + "-vs-" + p1i.getClass().getName() + "-results.txt");
+					// OutputStream out = Files.newOutputStream(outpath);
+					GinRummyGame tourney = new GinRummyGame(p0i, p1i, System.out);
+					executor.submit(tourney, null);
 					tourney_ct++;
 				} catch (Exception e) {
 					System.err.println("Error starting tournament: " + e);

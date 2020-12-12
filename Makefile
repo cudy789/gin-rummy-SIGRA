@@ -14,7 +14,7 @@ clean:
 	rm -r bin/
 
 run: build results
-	java ginrummy.GinRummyGame
+	java -cp bin/ ginrummy.GinRummyGame
 
 docker:
 	docker build . -t jmmaloney4/sigra:latest

@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import sigra.agents.util.AbstractDeadwoodMinimizingAgent;
+import sigra.agents.util.SiftAgent;
 
-public class SecondOrderDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizingAgent {
+public class SIGRA extends AbstractDeadwoodMinimizingAgent {
 
   // Optimal seems to be around 0.8 to 0.85
   // Set Either to 0.0 to disable.
@@ -20,11 +22,24 @@ public class SecondOrderDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizi
   boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
   boolean REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER = true;
 
-  protected SecondOrderDeadwoodMinimizingAgent(
-      boolean stubborn, double SecondOrderWeight, double OppMeldsWeight) {
-    super(stubborn);
+  public SIGRA(boolean stubborn, double SecondOrderWeight, double OppMeldsWeight) {
+    this(stubborn);
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.OPPONENT_MELDS_REDUCTION_WEIGHT = OppMeldsWeight;
+  }
+
+  protected SIGRA(boolean stubborn) {
+    super(stubborn);
+  }
+
+  public SIGRA(boolean stubborn, boolean MMD, boolean OppModel) {
+    this(stubborn);
+    if (!MMD) {
+      this.SECOND_ORDER_REDUCTION_WEIGHT = 0.0;
+    }
+    if (!OppModel) {
+      this.OPPONENT_MELDS_REDUCTION_WEIGHT = 0.0;
+    }
   }
 
   @Override

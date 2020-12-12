@@ -1,4 +1,4 @@
-package sigra.agents;
+package sigra.agents.util;
 
 import ginrummy.Card;
 import ginrummy.GinRummyPlayer;
@@ -14,7 +14,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
   static final int HAND_SIZE = 10;
 
   // Stubborn = Knock only for gin. Otherwise we knock when we drop below 10 deadwood.
-  boolean STUBBORN = true;
+  public boolean STUBBORN = true;
 
   int my_score;
   int opponent_score;
@@ -23,15 +23,15 @@ public abstract class SiftAgent implements GinRummyPlayer {
   int my_number;
 
   // cards in our hand
-  ArrayList<Card> my_hand;
+  public ArrayList<Card> my_hand;
   // known cards in opponent's hand
-  ArrayList<Card> opponent_hand_known;
+  public ArrayList<Card> opponent_hand_known;
   // cards that we discarded and our opponent didn't pick up
-  ArrayList<Card> opponent_passed;
+  public ArrayList<Card> opponent_passed;
   // cards our opponent explicitly discarded
-  ArrayList<Card> opponent_discarded;
+  public ArrayList<Card> opponent_discarded;
   // cards in the discard pile (including the top card after any player discards)
-  Stack<Card> discard_pile;
+  public Stack<Card> discard_pile;
 
   // list of list of opponent's melds, used when knocking
   ArrayList<ArrayList<Card>> opponent_melds;
@@ -92,35 +92,19 @@ public abstract class SiftAgent implements GinRummyPlayer {
 
   @Override
   public ArrayList<ArrayList<Card>> getFinalMelds() {
-    if (this.STUBBORN) {
-      return this.StubbornFinalMelds();
-    } else {
-      return this.NotStubbornFinalMelds();
-    }
-  }
-
-  public ArrayList<ArrayList<Card>> StubbornFinalMelds() {
     // Only knock if we have gin.
-    if (this.haveGin() || opponent_melds != null) {
+    if (opponent_melds != null
+        || (this.STUBBORN && this.haveGin())
+        || (!this.STUBBORN
+            && GinRummyUtil.getDeadwoodPoints(getBestMeldsWrapper(my_hand), my_hand)
+                <= GinRummyUtil.MAX_DEADWOOD)) {
       ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(my_hand);
       if (bestMelds.isEmpty()) {
         return new ArrayList<ArrayList<Card>>();
       }
-      return bestMelds.get(0);
+      return getBestMeldsWrapper(my_hand);
     }
     return null;
-  }
-
-  ArrayList<ArrayList<Card>> NotStubbornFinalMelds() {
-    // Check if deadwood of maximal meld is low enough to go out.
-    ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
-    if (!opponentKnocked
-        && (bestMeldSets.isEmpty()
-            || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards)
-                > GinRummyUtil.MAX_DEADWOOD)) return null;
-    return bestMeldSets.isEmpty()
-        ? new ArrayList<ArrayList<Card>>()
-        : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
   }
 
   @Override
@@ -191,7 +175,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
         .orElse(Stream.empty());
   }
 
-  int deadwoodMinusMelds(ArrayList<Card> hand) {
+  public int deadwoodMinusMelds(ArrayList<Card> hand) {
     ArrayList<ArrayList<ArrayList<Card>>> bestMelds = deadwoodHashTable.get(hand);
     if (bestMelds == null) {
       bestMelds = GinRummyUtil.cardsToBestMeldSets(hand);
@@ -223,7 +207,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
         .orElse(0);
   }
 
-  static ArrayList<ArrayList<Card>> getBestMeldsWrapper(ArrayList<Card> cards) {
+  public static ArrayList<ArrayList<Card>> getBestMeldsWrapper(ArrayList<Card> cards) {
     ArrayList<ArrayList<ArrayList<Card>>> rv = GinRummyUtil.cardsToBestMeldSets(cards);
     if (rv.isEmpty()) {
       return new ArrayList<ArrayList<Card>>();
@@ -231,7 +215,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
     return rv.get(0);
   }
 
-  static ArrayList<Card> flattenMeldSet(ArrayList<ArrayList<Card>> melds) {
+  public static ArrayList<Card> flattenMeldSet(ArrayList<ArrayList<Card>> melds) {
     return melds.stream()
         .collect(
             Collectors.reducing(
@@ -247,7 +231,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
                 }));
   }
 
-  static ArrayList<ArrayList<Card>> flattenMeldSets(
+  public static ArrayList<ArrayList<Card>> flattenMeldSets(
       ArrayList<ArrayList<ArrayList<Card>>> meldSets) {
     ArrayList<ArrayList<Card>> rv = new ArrayList<ArrayList<Card>>();
     meldSets.forEach(
@@ -257,7 +241,7 @@ public abstract class SiftAgent implements GinRummyPlayer {
     return rv;
   }
 
-  static boolean willCardMakeOrJoinMeldInHand(ArrayList<Card> hand, Card card) {
+  public static boolean willCardMakeOrJoinMeldInHand(ArrayList<Card> hand, Card card) {
     ArrayList<Card> newHand = new ArrayList<Card>(hand);
     newHand.add(card);
     ArrayList<ArrayList<ArrayList<Card>>> n = GinRummyUtil.cardsToBestMeldSets(newHand);

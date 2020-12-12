@@ -378,14 +378,14 @@ public class GinRummyGame implements Runnable {
 	}
 
 	static final String[] playerPool = new String[] {
-		"ginrummy.SimpleGinRummyPlayer",
-		"ginrummy.StubbornSimpleGinRummyPlayer",
-		"siftagent.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
-		"siftagent.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
-		"siftagent.SecondOrderDeadwoodMinimizingAgent",
-		"siftagent.StubbornOpModel",
-		"siftagent.OpModelOnlyAgent",
-		"siftagent.MMDOnlyAgent"
+		"sigra.agents.SimpleGinRummyPlayer",
+		"sigra.agents.StubbornSimpleGinRummyPlayer",
+		"sigra.agents.QuickKnockingSecondOrderDeadwoodMinimizingAgent",
+		"sigra.agents.NoOpponentModelingSecondOrderDeadwoodMinimizingAgent",
+		"sigra.agents.SecondOrderDeadwoodMinimizingAgent",
+		"sigra.agents.StubbornOpModel",
+		"sigra.agents.OpModelOnlyAgent",
+		"sigra.agents.MMDOnlyAgent"
 	};
 	
 	public static void main(final String[] args) {

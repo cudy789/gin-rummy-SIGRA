@@ -7,7 +7,7 @@
 version=8
 
 build:
-	mkdir bin/
+	mkdir -p bin/
 	javac --release $(version) -d bin/ **/*.java
 
 clean:

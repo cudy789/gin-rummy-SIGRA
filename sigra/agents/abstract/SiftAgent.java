@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 public abstract class SiftAgent implements GinRummyPlayer {
   static final int HAND_SIZE = 10;
 
+  // Stubborn = Knock only for gin. Otherwise we knock when we drop below 10 deadwood.
+  boolean STUBBORN = true;
+
   int my_score;
   int opponent_score;
 
@@ -39,6 +42,10 @@ public abstract class SiftAgent implements GinRummyPlayer {
   // Perhaps a speedup?
   Hashtable<ArrayList<Card>, ArrayList<ArrayList<ArrayList<Card>>>> deadwoodHashTable;
   static int DEADWOOD_HASHTABLE_SIZE = 10_000;
+
+  public SiftAgent(boolean stubborn) {
+    this.STUBBORN = stubborn;
+  }
 
   void reset_for_new_hand() {
     my_hand = new ArrayList<Card>();
@@ -85,6 +92,14 @@ public abstract class SiftAgent implements GinRummyPlayer {
 
   @Override
   public ArrayList<ArrayList<Card>> getFinalMelds() {
+    if (this.STUBBORN) {
+      return this.StubbornFinalMelds();
+    } else {
+      return this.NotStubbornFinalMelds();
+    }
+  }
+
+  public ArrayList<ArrayList<Card>> StubbornFinalMelds() {
     // Only knock if we have gin.
     if (this.haveGin() || opponent_melds != null) {
       ArrayList<ArrayList<ArrayList<Card>>> bestMelds = GinRummyUtil.cardsToBestMeldSets(my_hand);
@@ -95,6 +110,14 @@ public abstract class SiftAgent implements GinRummyPlayer {
     }
     return null;
   }
+
+  ArrayList<ArrayList<Card>> NotStubbornFinalMelds() {
+		// Check if deadwood of maximal meld is low enough to go out. 
+		ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
+		if (!opponentKnocked && (bestMeldSets.isEmpty() || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards) > GinRummyUtil.MAX_DEADWOOD))
+			return null;
+		return bestMeldSets.isEmpty() ? new ArrayList<ArrayList<Card>>() : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
+	}
 
   @Override
   public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {

@@ -7,7 +7,11 @@
 version=8
 
 build:
-	javac --release $(version) **/*.java
+	mkdir bin/
+	javac --release $(version) -d bin/ **/*.java
+
+clean:
+	rm -r bin/
 
 run: build results
 	java ginrummy.GinRummyGame

@@ -16,7 +16,11 @@ spec:
       - image: jmmaloney4/sigra:latest
         imagePullPolicy: Always
         name: ginrummy
-        resources: {}
+        resources:
+          requests:
+            cpu: "6000m"
+          limits:
+            cpu: "12000m"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities: {}

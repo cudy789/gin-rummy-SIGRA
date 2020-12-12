@@ -7,7 +7,7 @@ RUN mkdir siftagent
 WORKDIR siftagent
 COPY ./Makefile .
 COPY ./ginrummy ./ginrummy/
-COPY ./siftagent ./siftagent/
+COPY ./sigra ./sigra/
 
 RUN make
 ENTRYPOINT ["make", "run"]

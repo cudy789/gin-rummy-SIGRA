@@ -112,12 +112,16 @@ public abstract class SiftAgent implements GinRummyPlayer {
   }
 
   ArrayList<ArrayList<Card>> NotStubbornFinalMelds() {
-		// Check if deadwood of maximal meld is low enough to go out. 
-		ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
-		if (!opponentKnocked && (bestMeldSets.isEmpty() || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards) > GinRummyUtil.MAX_DEADWOOD))
-			return null;
-		return bestMeldSets.isEmpty() ? new ArrayList<ArrayList<Card>>() : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
-	}
+    // Check if deadwood of maximal meld is low enough to go out.
+    ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
+    if (!opponentKnocked
+        && (bestMeldSets.isEmpty()
+            || GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), cards)
+                > GinRummyUtil.MAX_DEADWOOD)) return null;
+    return bestMeldSets.isEmpty()
+        ? new ArrayList<ArrayList<Card>>()
+        : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
+  }
 
   @Override
   public void reportFinalMelds(int playerNum, ArrayList<ArrayList<Card>> melds) {

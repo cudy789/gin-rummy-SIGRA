@@ -8,5 +8,5 @@ Go to [Google Java Format](https://github.com/google/google-java-format/releases
 Then run:
 
 ```
-java -jar ./google-java-format-1.9-all-deps.jar --replace ./siftagent/*.java
+java -jar ./google-java-format-1.9-all-deps.jar --replace ./sigra/**/*.java
 ```

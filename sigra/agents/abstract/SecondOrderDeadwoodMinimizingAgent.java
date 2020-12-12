@@ -20,7 +20,8 @@ public class SecondOrderDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizi
   boolean REMOVE_OPPONENT_OF_A_KIND_DISCARDED = true;
   boolean REMOVE_OPPONENT_OF_A_KIND_PASSED_OVER = true;
 
-  protected SecondOrderDeadwoodMinimizingAgent(boolean stubborn, double SecondOrderWeight, double OppMeldsWeight) {
+  protected SecondOrderDeadwoodMinimizingAgent(
+      boolean stubborn, double SecondOrderWeight, double OppMeldsWeight) {
     super(stubborn);
     this.SECOND_ORDER_REDUCTION_WEIGHT = SecondOrderWeight;
     this.OPPONENT_MELDS_REDUCTION_WEIGHT = OppMeldsWeight;
@@ -230,15 +231,20 @@ public class SecondOrderDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizi
     possibleCards.addAll(hand);
 
     return GinRummyUtil.cardsToAllMelds(possibleCards).stream()
-        .filter((meld) -> {
-          return meld.stream().map((c) -> {
-            if (hand.contains(c)) {
-              return 1;
-            } else {
-              return 0;
-            }
-          }).reduce(0, Integer::sum) == 1;
-        })
+        .filter(
+            (meld) -> {
+              return meld.stream()
+                      .map(
+                          (c) -> {
+                            if (hand.contains(c)) {
+                              return 1;
+                            } else {
+                              return 0;
+                            }
+                          })
+                      .reduce(0, Integer::sum)
+                  == 1;
+            })
         .filter(
             (meld) -> {
               // Determine if any of the cards in `meld` are also known to be in the opponents hand.
@@ -297,7 +303,8 @@ public class SecondOrderDeadwoodMinimizingAgent extends AbstractDeadwoodMinimizi
     return hand.stream()
         .map(
             (card) -> {
-              return meldsOpponentCouldHave(hand, opponentHand, opponentDiscarded, discardPile, unknowns)
+              return meldsOpponentCouldHave(
+                      hand, opponentHand, opponentDiscarded, discardPile, unknowns)
                   .stream()
                   .filter(
                       (meld) -> {

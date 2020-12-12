@@ -386,9 +386,7 @@ public class GinRummyGame implements Runnable {
 	}
 	
 	public static void main(final String[] args) {
-		ArrayList<Supplier<GinRummyPlayer>> playerPool = new ArrayList<Supplier<GinRummyPlayer>>(8);
-		playerPool.add(() -> new SimpleGinRummyPlayer());
-		playerPool.add(() -> new StubbornSimpleGinRummyPlayer());
+		ArrayList<Supplier<SIGRA>> playerPool = new ArrayList<>(8);
 		playerPool.add(() -> new SIGRA(true, true, true));
 		playerPool.add(() -> new SIGRA(false, true, true));
 		playerPool.add(() -> new SIGRA(true, false, true));
@@ -406,22 +404,23 @@ public class GinRummyGame implements Runnable {
 
 		int tourney_ct = 0;
 
-		for (Supplier<GinRummyPlayer> p1 : playerPool) {
-			for (Supplier<GinRummyPlayer> p2 : playerPool) {
+		for (int i = 0; i != playerPool.size(); i++) {
+			for (int j = i; j != playerPool.size(); j++) {
 				try {
-					GinRummyPlayer p0i = p1.get();
-					GinRummyPlayer p1i = p2.get();
-					Path outpath = Paths.get("results/" + p0i.getClass().getName() + "-vs-" + p1i.getClass().getName() + "-results.txt");
+					SIGRA p0 = playerPool.get(i).get();
+					SIGRA p1 = playerPool.get(j).get();
+					Path outpath = Paths.get("results/" + p0.name() + "-vs-" + p1.name() + ".txt");
 					OutputStream out = Files.newOutputStream(outpath);
-					GinRummyGame tourney = new GinRummyGame(p0i, p1i, out);
+					System.out.println("Writing results to " + outpath);
+					GinRummyGame tourney = new GinRummyGame(p0, p1, out);
 					executor.submit(tourney, outpath);
 					tourney_ct++;
-				} catch (Exception e) {
+				}catch (Exception e) {
 					System.err.println("Error starting tournament: " + e);
 				}
 			}
 		}
-		
+                
 		while (tourney_ct != 0) {
 			try {
 				Future<Path> tourney = executor.take();
